@@ -14,6 +14,9 @@ namespace QualityOfLifeONI
         [MyCmpReq]
         private Storage storage;
 
+        [MyCmpReq]
+        private Building building;
+
         // Persist the button state in the player's save file
         [Serialize]
         public bool autoDropEnabled = true;
@@ -22,24 +25,57 @@ namespace QualityOfLifeONI
         {
             if (!autoDropEnabled || storage == null || storage.IsEmpty()) return;
 
-            // Trigger drop as soon as the storage hits maximum capacity
-            if (storage.IsFull() || storage.RemainingCapacity() <= 0.01f)
+            float currentMass = storage.MassStored();
+            if (currentMass <= 0f) return;
+
+            float targetCapacity = GetTargetCapacity();
+
+            // Trigger auto-drop if target capacity is reached or storage is full
+            if (currentMass >= targetCapacity - 0.01f || storage.IsFull())
             {
                 storage.DropAll();
             }
+        }
+
+        /// <summary>
+        /// Calculates target capacity based on the building's Storage slider and engine canister limits.
+        /// </summary>
+        private float GetTargetCapacity()
+        {
+            if (storage == null) return 0f;
+
+            // Read the user slider setting directly from the Storage component
+            float target = storage.capacityKg;
+            IUserControlledCapacity userCapacity = storage.GetComponent<IUserControlledCapacity>();
+            if (userCapacity != null)
+            {
+                target = userCapacity.UserMaxCapacity; // Reads the user slider setting
+            }
+
+            // Enforce ONI hard limits per bottle/canister type
+            string prefabId = building != null ? building.PrefabID().Name : "";
+            if (prefabId == "GasBottler")
+            {
+                target = Mathf.Min(target, 1000f); // Gas canisters max out at 1000 kg
+            }
+            else if (prefabId == "LiquidBottler")
+            {
+                target = Mathf.Min(target, 1000f); // Liquid bottles max out at 1000 kg
+            }
+
+            return target;
         }
 
         // =========================================================================
         // ISidescreenButtonControl Interface Implementation (UI Button)
         // =========================================================================
 
-        // FIX FOR CS8702: Satisfies old .NET 4.8 runtime interface bindings
         public string SidescreenTitle => "Auto Drop Config";
 
         public string SidescreenButtonText => autoDropEnabled ? "AutoDrop: Enabled" : "AutoDrop: Disabled";
 
-        public string SidescreenButtonTooltip => autoDropEnabled 
-            ? "Click to disable automatically dropping bottles when full." 
+        public string SidescreenButtonTooltip => autoDropEnabled
+            ? "Click to disable automatically dropping bottles when full."
             : "Click to enable automatically dropping bottles when full.";
 
         public bool SidescreenEnabled() => true;
@@ -55,10 +91,8 @@ namespace QualityOfLifeONI
             autoDropEnabled = !autoDropEnabled;
         }
 
-        // FIX FOR CS0535: Implements the newly added method required by the game engine update
         public void SetButtonTextOverride(ButtonMenuTextOverride textOverride)
         {
-            // Left empty as no runtime text re-routing is required
         }
     }
 
@@ -79,6 +113,16 @@ namespace QualityOfLifeONI
             {
                 __instance.gameObject.AddOrGet<AutoDropBottlerComponent>();
             }
+        }
+    }
+    
+    // custom: submergible Thermo Regulator
+    [HarmonyPatch(typeof(AirConditionerConfig), nameof(AirConditionerConfig.CreateBuildingDef))]   
+    public static class AirConditionerConfig_CreateBuildingDef_Patch
+    {
+        public static void Postfix(ref BuildingDef __result)
+        {
+            __result.Floodable = false;
         }
     }
 }

@@ -8,6 +8,18 @@ namespace QualityOfLifeONI
     public class QoLConfig
     {
         // ==========================================
+        // CATEGORY: AUTO ARTIFACT MODULE DROP
+        // ==========================================
+        [Option("Enable Auto Artifact Drop", "Automatically drop artifacts from the Artifact Module after landing.", "Auto Artifact Drop")]
+        [JsonProperty]
+        public bool ArtifactAutoDropEnabled { get; set; } = true;
+
+        [Option("Drop Delay (Seconds)", "Time to wait in seconds after the rocket lands before automatically dropping the artifact.", "Auto Artifact Drop")]
+        [Limit(1, 600)]
+        [JsonProperty]
+        public float ArtifactDropDelaySeconds { get; set; } = 5f;
+
+        // ==========================================
         // CATEGORY: BEETA SETTINGS
         // ==========================================
         [Option("Sleep Blocks", "How many blocks at the end of the cycle the Beetas should sleep (1 block = 25s).", "Beeta Settings")]
