@@ -73,24 +73,11 @@ namespace QualityOfLifeONI
         [MyCmpGet]
         private RocketModuleCluster rocketModule;
 
-        private float timer = -1f;
-        private bool wasGrounded = false;
+        [MyCmpGet]
+        private SingleEntityReceptacle receptacle;
 
-        protected override void OnSpawn()
-        {
-            base.OnSpawn();
-            wasGrounded = IsGrounded();
-            Subscribe((int)GameHashes.RocketLanded, OnLandedEvent);
-            Subscribe((int)GameHashes.Landed, OnLandedEvent);
-        }
-
-        private void OnLandedEvent(object data)
-        {
-            if (ModInit.Config != null && ModInit.Config.ArtifactAutoDropEnabled)
-            {
-                timer = 0f;
-            }
-        }
+        private float timer = 0f;
+        private bool hasDroppedForThisLanding = false;
 
         public void Sim1000ms(float dt)
         {
@@ -99,28 +86,28 @@ namespace QualityOfLifeONI
 
             bool isGrounded = IsGrounded();
 
-            if (isGrounded && !wasGrounded && timer < 0f)
+            if (!isGrounded)
             {
+                hasDroppedForThisLanding = false;
                 timer = 0f;
+                return;
             }
-            wasGrounded = isGrounded;
 
-            if (timer >= 0f && isGrounded)
+            if (!hasDroppedForThisLanding && HasArtifact())
             {
-                if (storage == null || storage.IsEmpty())
-                {
-                    timer = -1f;
-                    return;
-                }
-
                 timer += dt;
                 float targetDelay = ModInit.Config.ArtifactDropDelaySeconds;
 
                 if (timer >= targetDelay)
                 {
-                    timer = -1f;
                     DropArtifact();
+                    hasDroppedForThisLanding = true;
+                    timer = 0f;
                 }
+            }
+            else if (!HasArtifact())
+            {
+                timer = 0f;
             }
         }
 
@@ -134,11 +121,24 @@ namespace QualityOfLifeONI
             return false;
         }
 
+        private bool HasArtifact()
+        {
+            if (receptacle != null && receptacle.Occupant != null)
+                return true;
+
+            return storage != null && !storage.IsEmpty();
+        }
+
         private void DropArtifact()
         {
-            if (storage != null && !storage.IsEmpty())
+            if (receptacle != null && receptacle.Occupant != null)
             {
-                storage.DropAll(false, false);
+                // .GetValue() executes the method in Harmony Traverse
+                HarmonyLib.Traverse.Create(receptacle).Method("ClearOccupant").GetValue();
+            }
+            else if (storage != null && !storage.IsEmpty())
+            {
+                storage.DropAll();
             }
         }
     }
