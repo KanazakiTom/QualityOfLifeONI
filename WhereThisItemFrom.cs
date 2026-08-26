@@ -87,7 +87,7 @@ namespace QualityOfLifeONI
             // 2. Check BuildingDef cache
             BuildingDef def = null;
             BuildingComplete bc = go.GetComponent<BuildingComplete>();
-            if (bc != null) def = bc.Def
+            if (bc != null) def = bc.Def;
             if (def == null)
             {
                 BuildingUnderConstruction buc = go.GetComponent<BuildingUnderConstruction>();
