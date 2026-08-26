@@ -1,6 +1,7 @@
-﻿using System;
+﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
-using HarmonyLib;
+using UnityEngine;
 
 namespace QualityOfLifeONI
 {
@@ -97,120 +98,70 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-/*    #region Cargo Bay, Artifact Transport Modules
-
-    public static class CargoBayAutomationHelper
-    {
-        public const string PORT_ID = "CargoBayEmptyInputPort";
-
-        // Helper to attach input port definition safely
-        public static void AddAutomationPort(BuildingDef def)
-        {
-            if (def == null) return;
-
-            if (def.LogicInputPorts == null)
-                def.LogicInputPorts = new List<LogicPorts.Port>();
-
-            // Check if port already exists to avoid duplicate port crashes
-            if (def.LogicInputPorts.Exists(p => p.id == PORT_ID)) return;
-
-            def.LogicInputPorts.Add(
-                LogicPorts.Port.InputPort(
-                    PORT_ID,
-                    new CellOffset(0, 1),
-                    "Empty Storage",
-                    "A GREEN signal instantly empties all contents onto the ground.",
-                    "A RED signal does nothing.",
-                    false
-                )
-            );
-        }
-
-        // Drop all contents inside storage safely
-        public static void EmptyModuleStorage(GameObject go)
-        {
-            if (go == null) return;
-
-            // Target Storage components on the module
-            Storage[] storages = go.GetComponents<Storage>();
-            if (storages != null)
-            {
-                foreach (Storage storage in storages)
-                {
-                    if (storage != null && storage.Count > 0)
-                    {
-                        storage.DropAll(false, false, default, true);
-                    }
-                }
-            }
-        }
-    }
-
-    // --- 1. ADD INPUT PORTS TO BUILDING DEFS ---
-
-    // Solid Cargo Bay
-    [HarmonyPatch(typeof(SolidCargoBayClusterConfig), nameof(SolidCargoBayClusterConfig.CreateBuildingDef))]
-    public static class SolidCargoBayClusterConfig_CreateBuildingDef_Patch
-    {
-        public static void Postfix(ref BuildingDef __result) => CargoBayAutomationHelper.AddAutomationPort(__result);
-    }
-
-    // Liquid Cargo Bay
-    [HarmonyPatch(typeof(LiquidCargoBayClusterConfig), nameof(LiquidCargoBayClusterConfig.CreateBuildingDef))]
-    public static class LiquidCargoBayClusterConfig_CreateBuildingDef_Patch
-    {
-        public static void Postfix(ref BuildingDef __result) => CargoBayAutomationHelper.AddAutomationPort(__result);
-    }
-
-    // Gas Cargo Bay
-    [HarmonyPatch(typeof(GasCargoBayClusterConfig), nameof(GasCargoBayClusterConfig.CreateBuildingDef))]
-    public static class GasCargoBayClusterConfig_CreateBuildingDef_Patch
-    {
-        public static void Postfix(ref BuildingDef __result) => CargoBayAutomationHelper.AddAutomationPort(__result);
-    }
-
-    // Large Cargo Bay
-    [HarmonyPatch(typeof(SpecialCargoBayClusterConfig), nameof(SpecialCargoBayClusterConfig.CreateBuildingDef))]
-    public static class SpecialCargoBayClusterConfig_CreateBuildingDef_Patch
-    {
-        public static void Postfix(ref BuildingDef __result) => CargoBayAutomationHelper.AddAutomationPort(__result);
-    }
-
-    // Artifact Transport Module
+    #region Automation for Artifact Transport Module
+    // --- 1. ADD LOGIC PORT TO BUILDING DEF ---
     [HarmonyPatch(typeof(ArtifactCargoBayConfig), nameof(ArtifactCargoBayConfig.CreateBuildingDef))]
     public static class ArtifactCargoBayConfig_CreateBuildingDef_Patch
     {
-        public static void Postfix(ref BuildingDef __result) => CargoBayAutomationHelper.AddAutomationPort(__result);
-    }
-
-
-    // --- 2. SAFE LOGIC EVENT HANDLING ---
-
-    [HarmonyPatch(typeof(LogicPorts), "OnLogicEvent")]
-    public static class LogicPorts_OnLogicEvent_Patch
-    {
-        public static void Postfix(LogicPorts __instance, HashedString portID, int newValue)
+        public static void Postfix(BuildingDef __result)
         {
-            try
+            if (__result.LogicInputPorts == null)
             {
-                if (__instance == null || portID == null) return;
+                __result.LogicInputPorts = new List<LogicPorts.Port>();
+            }
 
-                // Compare string representation to prevent HashedString comparison crashes
-                if (portID.ToString() == CargoBayAutomationHelper.PORT_ID)
-                {
-                    // Check if GREEN signal (1)
-                    if (LogicCircuitNetwork.IsBitActive(0, newValue))
-                    {
-                        CargoBayAutomationHelper.EmptyModuleStorage(__instance.gameObject);
-                    }
-                }
-            }
-            catch
-            {
-                // Catch any unexpected edge-case exceptions during network ticks
-            }
+            __result.LogicInputPorts.Add(
+                LogicPorts.Port.InputPort(
+                    ArtifactCargoBayAutomation.PORT_ID,
+                    new CellOffset(1, 0), // (y=0, x=1) center port
+                    "Eject Artifact",
+                    "GREEN Signal: Ejects stored artifact",
+                    "RED Signal: Retains stored artifact"
+                )
+            );
         }
     }
 
+    // --- 2. ATTACH COMPONENT TO PREFAB ---
+    [HarmonyPatch(typeof(ArtifactCargoBayConfig), nameof(ArtifactCargoBayConfig.DoPostConfigureComplete))]
+    public static class ArtifactCargoBayConfig_DoPostConfigureComplete_Patch
+    {
+        public static void Postfix(GameObject go)
+        {
+            go.AddOrGet<ArtifactCargoBayAutomation>();
+        }
+    }
+
+    // --- 3. AUTOMATION COMPONENT ---
+    public class ArtifactCargoBayAutomation : KMonoBehaviour
+    {
+        public static readonly HashedString PORT_ID = new HashedString("ArtifactCargoBayDropPort");
+
+        [MyCmpGet]
+        private SingleEntityReceptacle receptacle;
+
+        private static readonly EventSystem.IntraObjectHandler<ArtifactCargoBayAutomation> OnLogicEventDelegate =
+            new EventSystem.IntraObjectHandler<ArtifactCargoBayAutomation>((component, data) => component.OnLogicEvent(data));
+
+        protected override void OnSpawn()
+        {
+            base.OnSpawn();
+            // Subscribe to logic port signal changes
+            Subscribe((int)GameHashes.LogicEvent, OnLogicEventDelegate);
+        }
+
+        private void OnLogicEvent(object data)
+        {
+            if (data is LogicValueChanged logicValueChanged && logicValueChanged.portID == PORT_ID)
+            {
+                // Value > 0 represents a GREEN signal
+                if (logicValueChanged.newValue > 0 && receptacle != null && receptacle.Occupant != null)
+                {
+                    // Directly triggers the "Remove" button action
+                    receptacle.OrderRemoveOccupant();
+                }
+            }
+        }
+    }
     #endregion
-*/}
+}
