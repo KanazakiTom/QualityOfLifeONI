@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 
-namespace DuplicantReachability
+namespace QualityOfLifeONI
 {
     // 1. Fix Deconstruction Reachability
     [HarmonyPatch(typeof(Deconstructable), "OnSpawn")]

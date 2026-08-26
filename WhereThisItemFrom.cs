@@ -177,7 +177,7 @@ namespace QualityOfLifeONI
             string modName = WhereThisItemFromHelper.GetModNameForItem(go);
 
             string formattedText = string.IsNullOrEmpty(modName)
-                ? "<i><color=#318CE7>Vanilla</color></i>"
+                ? "<i><color=#318CE7>Vanilla item</color></i>"
                 : $"<i><color=#318CE7>This item from the mod \"{modName}\"</color></i>";
 
             __result.Add(new Descriptor(

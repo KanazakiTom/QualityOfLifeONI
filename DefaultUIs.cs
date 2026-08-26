@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using PeterHan.PLib.Options;
 
-namespace DefaultUIs
+namespace QualityOfLifeONI
 {
     [JsonObject(MemberSerialization.OptIn)]
     //[ModInfo("Default Tool Filters", "https://github.com/yourusername/DefaultToolFilters")]
