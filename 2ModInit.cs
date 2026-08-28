@@ -23,6 +23,10 @@ namespace QualityOfLifeONI
 
         public override void OnLoad(Harmony harmony)
         {
+            // From No Mop Limit
+            MopTool.maxMopAmt = float.PositiveInfinity;
+
+            // Harmony base load
             base.OnLoad(harmony);
 
             PUtil.InitLibrary();

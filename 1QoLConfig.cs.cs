@@ -48,17 +48,6 @@ namespace QualityOfLifeONI
             [Option("Enable Turbo Mode (Alpha)", "Enable the sidescreen button to toggle 4x speed and power mode.")]
             public bool EnableTurboMode { get; set; } = false;
         }
-        // ==========================================
-        // CATEGORY: AUTO ARTIFACT MODULE DROP
-        // ==========================================
-        [Option("Enable Auto Artifact Drop", "Automatically drop artifacts from the Artifact Module after landing.", "Auto Artifact Drop")]
-        [JsonProperty]
-        public bool ArtifactAutoDropEnabled { get; set; } = true;
-
-        [Option("Drop Delay (Seconds)", "Time to wait in seconds after the rocket lands before automatically dropping the artifact.", "Auto Artifact Drop")]
-        [Limit(1, 600)]
-        [JsonProperty]
-        public float ArtifactDropDelaySeconds { get; set; } = 5f;
 
         // ==========================================
         // CATEGORY: BEETA SETTINGS
