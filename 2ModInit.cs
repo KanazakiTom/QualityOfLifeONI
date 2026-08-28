@@ -1,13 +1,23 @@
-﻿using HarmonyLib;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using HarmonyLib;
 using KMod;
 using PeterHan.PLib.Core;
 using PeterHan.PLib.Options;
-using UnityEngine;
+using STRINGS;
+using static QualityOfLifeONI.QoLConfig;
 
 namespace QualityOfLifeONI
 {
+    [HarmonyPatch(typeof(BaseHatchConfig), "FoodDiet")]
     public class ModInit : UserMod2
     {
+        public static AssemblyName AssemblyName => Assembly.GetExecutingAssembly().GetName();
+        public static Version Version => AssemblyName.Version;
+        public static string Name => AssemblyName.Name;
+
         // Centralized config instance
         public static QoLConfig Config;
 
@@ -22,6 +32,21 @@ namespace QualityOfLifeONI
 
             // Load settings into memory at startup
             Config = POptions.ReadSettings<QoLConfig>() ?? new QoLConfig();
+
+            Console.WriteLine($"Mod <{Name}> loaded: {Version}");
+        }
+
+        // Hatches Don't Eat Meat
+        private static void Postfix(ref List<Diet.Info> __result)
+        {
+            for (int i = 0; i < __result.Count; i++)
+            {
+                bool flag = __result[i].consumedTags.First<Tag>().ToString() == "Meat";
+                if (flag)
+                {
+                    __result.RemoveAt(i);
+                }
+            }
         }
     }
 
@@ -49,8 +74,15 @@ namespace QualityOfLifeONI
             Strings.Add("STRINGS.UI.TOOLS.FILTERLAYERS.VANILLA_MODE.NAME", "Vanilla Mode");
             Strings.Add("STRINGS.UI.TOOLS.FILTERLAYERS.VANILLA_MODE.TOOLTIP", "Restores default vanilla building rules.");
 
-            // 3. Register Buildings to Plan Menu
+            // 3. Cryo Consender Strings
+            Strings.Add($"STRINGS.BUILDINGS.PREFABS.{CryoCondenserConfig.ID.ToUpper()}.NAME", UI.FormatAsLink("Cryo Condenser", CryoCondenserConfig.ID));
+            Strings.Add($"STRINGS.BUILDINGS.PREFABS.{CryoCondenserConfig.ID.ToUpper()}.DESC", "A high-powered condenser that cools gas into its liquid state and outputs the thermal heat into its surroundings.");
+            Strings.Add($"STRINGS.BUILDINGS.PREFABS.{CryoCondenserConfig.ID.ToUpper()}.EFFECT", $"Condenses incoming {UI.FormatAsLink("Gas", "ELEMENTS_GAS")} into {UI.FormatAsLink("Liquid", "ELEMENTS_LIQUID")} while outputting {UI.FormatAsLink("Heat", "HEAT")} in its immediate vicinity.");
+
+
+            // 4. Register Buildings to Plan Menu
             ModUtil.AddBuildingToPlanScreen("Base", SelfTimerPneumaticDoorConfig.ID);
+            ModUtil.AddBuildingToPlanScreen("Utilities", CryoCondenserConfig.ID);
         }
     }
 
@@ -61,6 +93,41 @@ namespace QualityOfLifeONI
         public static void Postfix()
         {
             Db.Get().Techs.Get("AnimalControl")?.unlockedItemIDs.Add(SelfTimerPneumaticDoorConfig.ID);
+        }
+    }
+
+    // --- CRYO CONSENDER TECH ---
+    [HarmonyPatch(typeof(Database.Techs), "Init")]
+    public static class Techs_Init_Patch
+    {
+        public static void Postfix(Database.Techs __instance)
+        {
+            Tech tech = null;
+
+            if (PlayerConfig.Instance?.Difficulty == TechDifficulty.Hard)
+            {
+                // DLC: CryoFuelPropulsion | Base Game: HydrogenEngine
+                string[] hardTechCandidates = new string[]
+                {
+                        "CryoFuelPropulsion",
+                        "HydrogenEngine"
+                };
+
+                foreach (string techId in hardTechCandidates)
+                {
+                    tech = __instance.TryGet(techId);
+                    if (tech != null) break;
+                }
+            }
+
+            // Fallback to Easy Mode (LiquidTemperature / Aquatuner) if not set or found
+            if (tech == null)
+            {
+                tech = __instance.TryGet("LiquidTemperature");
+            }
+
+            // Add building to the resolved tech node
+            tech?.unlockedItemIDs.Add(CryoCondenserConfig.ID);
         }
     }
 }
