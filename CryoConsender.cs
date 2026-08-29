@@ -8,13 +8,13 @@ namespace QualityOfLifeONI
     public class CryoCondenser : KMonoBehaviour, ISim200ms, ISidescreenButtonControl
     {
         [MyCmpReq]
-        private Storage storage;
+        private readonly Storage storage;
         [MyCmpReq]
-        private Operational operational;
+        private readonly Operational operational;
         [MyCmpReq]
-        private PrimaryElement primaryElement;
+        private readonly PrimaryElement primaryElement;
         [MyCmpReq]
-        private EnergyConsumer energyConsumer;
+        private readonly EnergyConsumer energyConsumer;
 
         private const float BASE_BATCH_MASS_KG = 10f; // 10 kg/tick in Classic Mode
         private const float HIGH_WATER_MARK_KG = 100f; // Wait until 100 kg accumulated to start

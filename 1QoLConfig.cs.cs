@@ -4,6 +4,15 @@ using PeterHan.PLib.Options;
 namespace QualityOfLifeONI
 {
     // ==========================================
+    // CATEGORY: CaiLib's Config
+    // ==========================================
+    public class CaiLibConfig
+    {
+        [JsonProperty]
+        public int Height { get; set; } = 8;
+    }
+
+    // ==========================================
     // CATEGORY: CRYO CONSENDER
     // ==========================================
     [JsonObject(MemberSerialization.OptIn)]

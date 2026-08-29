@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using Database;
 using HarmonyLib;
 using JetBrains.Annotations;
 using KMod;
 using TMPro;
+using TUNING;
 using UnityEngine;
+using SanchozzONIMods.Lib;
 
 namespace QualityOfLifeONI
 {
@@ -697,11 +698,313 @@ namespace QualityOfLifeONI
     }
     #endregion
 
+    #region Mod: No 'Long Commutes'
+    [HarmonyPatch(typeof(Tutorial))]
+    [HarmonyPatch("LongTravelTimes")]
+    public class Tutorial_LongTravelTimes_Patch
+    {
+        public static bool Prefix(ref bool __result)
+        {
+            __result = true;
+            return false;
+        }
+    }
+    #endregion
+
+    #region Mod: Bigger Camera Zoom Out
+    public static class BiggerCameraZoomOutPatches
+    {
+        private static readonly float _maxZoom = 200f;
+
+        [HarmonyPatch(typeof(CameraController))]
+        [HarmonyPatch("OnPrefabInit")]
+        public static class CameraController_OnPrefabInit_Patch
+        {
+            public static void Prefix(CameraController __instance)
+            {
+                Traverse.Create(__instance).Field("maxOrthographicSize").SetValue(BiggerCameraZoomOutPatches._maxZoom);
+            }
+        }
+
+        [HarmonyPatch(typeof(CameraController))]
+        [HarmonyPatch("SetMaxOrthographicSize")]
+        public static class CameraController_SetMaxOrthographicSize_Patch
+        {
+            public static void Prefix(ref float size)
+            {
+                size = BiggerCameraZoomOutPatches._maxZoom;
+            }
+        }
+
+        [HarmonyPatch(typeof(CameraController))]
+        [HarmonyPatch("ConstrainToWorld")]
+        public static class CameraController_ConstrainToWorld_Patch
+        {
+            public static bool Prefix()
+            {
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(WattsonMessage))]
+        [HarmonyPatch("OnDeactivate")]
+        public static class WattsonMessage_OnDeactivate_Patch
+        {
+            public static void Postfix()
+            {
+                UIScheduler instance = UIScheduler.Instance;
+                if (instance == null)
+                {
+                    return;
+                }
+                instance.Schedule("zoomConfig", 0.7f, delegate (object data)
+                {
+                    CameraController.Instance.SetMaxOrthographicSize(BiggerCameraZoomOutPatches._maxZoom);
+                }, null, null);
+            }
+        }
+
+        [HarmonyPatch(typeof(ClusterMapScreen))]
+        [HarmonyPatch("OnKeyDown")]
+        public static class ClusterMapScreen_OnKeyDown_Patch
+        {
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
+                for (int i = 1; i < list.Count; i++)
+                {
+                    if (list[i].opcode == OpCodes.Ldc_R4 && (float)list[i].operand == 50f)
+                    {
+                        list[i].operand = 20f;
+                        break;
+                    }
+                }
+                return list.AsEnumerable<CodeInstruction>();
+            }
+        }
+    }
+    #endregion
+
+    #region Mod: Bigger Building Menu
+    public class BiggerBuildingMenuPatches
+    {
+        [HarmonyPatch(typeof(PlanScreen))]
+        [HarmonyPatch("ConfigurePanelSize")]
+        public static class PlanScreen_ConfigurePanelSize_Patch
+        {
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
+                for (int i = 1; i < list.Count; i++)
+                {
+                    if (list[i].opcode == OpCodes.Ldc_I4_6)
+                    {
+                        list[i].opcode = OpCodes.Ldc_I4;
+                        list[i].operand = ModInit.ConfigManager.Config.Height;
+                        break;
+                    }
+                }
+                return list.AsEnumerable<CodeInstruction>();
+            }
+        }
+    }
+    #endregion
+
+    #region Mod: Plan Buildings Without Materials
+    public class PlanBuildingsWithoutMaterialsPatches
+    {
+        [HarmonyPatch(typeof(MaterialSelector))]
+        [HarmonyPatch("AllowInsufficientMaterialBuild")]
+        public static class MaterialSelector_AllowInsufficientMaterialBuild_Patch
+        {
+            public static bool Prefix(ref bool __result)
+            {
+                __result = true;
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(PlanScreen))]
+        [HarmonyPatch("GetBuildableStateForDef")]
+        public static class PlanScreen_GetBuildableStateForDef_Patch
+        {
+            public static void Postfix(ref PlanScreen.RequirementsState __result)
+            {
+                if (__result == PlanScreen.RequirementsState.Materials)
+                {
+                    __result = PlanScreen.RequirementsState.Complete;
+                }
+            }
+        }
+    }
+    #endregion
+
+    #region Mod: Conveyor Rail Filter
+    // TODO
+    #endregion
+
+    #region Mod: Oil Well - Any Water
+    [HarmonyPatch(typeof(OilWellCapConfig))]
+    [HarmonyPatch("ConfigureBuildingTemplate")]
+    public class OilWellCapConfig_ConfigureBuildingTemplate_Patch
+    {
+        public static void Postfix(ref GameObject go)
+        {
+            go.AddOrGet<ElementConverter>().consumedElements = new ElementConverter.ConsumedElement[]
+            {
+                    new ElementConverter.ConsumedElement(GameTags.AnyWater, 1f, true)
+            };
+            go.AddOrGet<ConduitConsumer>().capacityTag = GameTags.AnyWater;
+        }
+    }
+    #endregion
+
+    #region Mod: Wounded Go To Med Bed
+    public class WoundedGoToMedBedPatches
+    {
+        [HarmonyPatch(typeof(WoundMonitor))]
+        [HarmonyPatch("InitializeStates")]
+        public class WoundMonitorInitializeStates
+        {
+            public static void Postfix(ref WoundMonitor __instance)
+            {
+                __instance.wounded.Exit(new StateMachine<WoundMonitor, WoundMonitor.Instance, IStateMachineTarget, object>.State.Callback(WoundedGoToMedBedPatches.WoundMonitorInitializeStates.UnassignClinic));
+                __instance.wounded.light.ToggleUrge(Db.Get().Urges.Heal).Update("AutoAssignClinic", delegate (WoundMonitor.Instance smi, float dt)
+                {
+                    WoundedGoToMedBedPatches.WoundMonitorInitializeStates.AutoAssignClinic(smi);
+                }, UpdateRate.SIM_1000ms, false);
+                __instance.wounded.medium.ToggleUrge(Db.Get().Urges.Heal).Update("AutoAssignClinic", delegate (WoundMonitor.Instance smi, float dt)
+                {
+                    WoundedGoToMedBedPatches.WoundMonitorInitializeStates.AutoAssignClinic(smi);
+                }, UpdateRate.SIM_1000ms, false);
+                __instance.wounded.heavy.ToggleUrge(Db.Get().Urges.Heal).Update("AutoAssignClinic", delegate (WoundMonitor.Instance smi, float dt)
+                {
+                    WoundedGoToMedBedPatches.WoundMonitorInitializeStates.AutoAssignClinic(smi);
+                }, UpdateRate.SIM_1000ms, false);
+            }
+            public static void AutoAssignClinic(WoundMonitor.Instance smi)
+            {
+                Ownables soleOwner = smi.sm.masterTarget.Get(smi).GetComponent<MinionIdentity>().GetSoleOwner();
+                AssignableSlot clinic = Db.Get().AssignableSlots.Clinic;
+                AssignableSlotInstance slot = soleOwner.GetSlot(clinic);
+                if (slot == null || slot.assignable != null)
+                {
+                    return;
+                }
+                soleOwner.AutoAssignSlot(clinic);
+            }
+
+            public static void UnassignClinic(WoundMonitor.Instance smi)
+            {
+                AssignableSlotInstance slot = smi.sm.masterTarget.Get(smi).GetComponent<MinionIdentity>().GetSoleOwner().GetSlot(Db.Get().AssignableSlots.Clinic);
+                if (slot == null)
+                {
+                    return;
+                }
+                slot.Unassign(true);
+            }
+        }
+    }
+    #endregion
+
+    #region Mod: Geyser Calculated Average Output Tooltip
+    public class GeyserCalculatedAvgOutputTooltipPatches
+    {
+        private static readonly LocString GeyserAvgOutputAnalyse = "Calculated Average Output: (Requires Analysis)";
+
+        private static readonly LocString GeyserAvgOutputAnalyseTooltip = "A researcher must analyze this geyser to determine its average output.";
+
+        private static readonly LocString GeyserAvgOutput = "Calculated Average Output: {0} {1}";
+
+        private static readonly LocString GeyserAvgOutputTooltip = "Taking into account its eruption rates and dormant times, this geyser average output is {0} {1}";
+
+        [HarmonyPatch(typeof(Geyser))]
+        [HarmonyPatch("GetDescriptors")]
+        public static class Geyser_GetDescriptors_Patch
+        {
+            public static void Postfix(ref Geyser __instance, ref List<Descriptor> __result)
+            {
+                Studyable component = __instance.GetComponent<Studyable>();
+                if (component && !component.Studied)
+                {
+                    __result.Add(new Descriptor(GeyserCalculatedAvgOutputTooltipPatches.GeyserAvgOutputAnalyse, GeyserCalculatedAvgOutputTooltipPatches.GeyserAvgOutputAnalyseTooltip, Descriptor.DescriptorType.Effect, false));
+                    return;
+                }
+                float num = __instance.configuration.GetEmitRate() * 1000f;
+                float onDuration = __instance.configuration.GetOnDuration();
+                float iterationLength = __instance.configuration.GetIterationLength();
+                float num2 = __instance.configuration.GetYearOnDuration() / 600f;
+                float num3 = __instance.configuration.GetYearLength() / 600f;
+                float num4 = onDuration / iterationLength * (num2 / num3) * num;
+                string arg = "g/s";
+                if (num4 > 1000f)
+                {
+                    num4 /= 1000f;
+                    arg = "kg/s";
+                }
+                string arg2 = num4.ToString("0.00");
+                __result.Add(new Descriptor(string.Format(GeyserCalculatedAvgOutputTooltipPatches.GeyserAvgOutput, arg2, arg), string.Format(GeyserCalculatedAvgOutputTooltipPatches.GeyserAvgOutputTooltip, arg2, arg), Descriptor.DescriptorType.Effect, false));
+            }
+        }
+    }
+    #endregion
+
+    #region Mod: Clothing Locker
+    public class ClothingLockerConfig : IBuildingConfig
+    {
+        public override BuildingDef CreateBuildingDef()
+        {
+            BuildingDef buildingDef = BuildingTemplates.CreateBuildingDef("asquared31415_ClothingLockerConfig", 1, 2, "setpiece_locker_kanim", 50, 30f, BUILDINGS.CONSTRUCTION_MASS_KG.TIER2, MATERIALS.RAW_METALS, 1600f, BuildLocationRule.OnFloor, DECOR.PENALTY.TIER1, NOISE_POLLUTION.NONE, 0.2f);
+            buildingDef.Floodable = false;
+            buildingDef.Overheatable = false;
+            return buildingDef;
+        }
+
+        public override void ConfigureBuildingTemplate(GameObject go, Tag prefabTag)
+        {
+            SoundEventVolumeCache.instance.AddVolume("storagelocker_kanim", "StorageLocker_Hit_metallic_low", NOISE_POLLUTION.NOISY.TIER1);
+            Prioritizable.AddRef(go);
+            Storage storage = go.AddOrGet<Storage>();
+            storage.showInUI = true;
+            storage.allowItemRemoval = true;
+            storage.showDescriptor = true;
+            storage.storageFilters = new List<Tag>
+            {
+                GameTags.Clothes
+            };
+            storage.storageFullMargin = STORAGE.STORAGE_LOCKER_FILLED_MARGIN;
+            storage.fetchCategory = Storage.FetchCategory.GeneralStorage;
+            go.AddOrGet<CopyBuildingSettings>().copyGroupTag = "asquared31415_ClothingLockerConfig";
+            go.AddOrGet<StorageLocker>();
+            go.AddOrGet<UserNameable>();
+        }
+
+        public override void DoPostConfigureComplete(GameObject go)
+        {
+            go.AddOrGetDef<StorageController.Def>();
+        }
+
+        public const string Id = "asquared31415_ClothingLockerConfig";
+
+        public const string Anim = "setpiece_locker_kanim";
+
+        public const string Name = "Clothing Locker";
+
+        public const string Effect = "Stores the clothing of your choosing.";
+
+        public const string Desc = "Duplicants decided that putting clothes in with their debris was a bad idea.  So they invented a storage bin specifically for storing clothing!";
+    }
+    #endregion
+
+    #region Mod: Wrangle & Carry
+    // Sent to ModInit
+    #endregion
+
     #region Mod: 
 
     #endregion
 
-    #region Mod:
+    #region Mod: 
 
     #endregion
 
@@ -709,7 +1012,11 @@ namespace QualityOfLifeONI
 
     #endregion
 
-    #region Mod:
+    #region Mod: 
+
+    #endregion
+
+    #region Mod: 
 
     #endregion
 }

@@ -39,10 +39,10 @@ namespace QualityOfLifeONI
     public class SelfTimerDoor : KMonoBehaviour
     {
         [MyCmpReq]
-        private Door door;
+        private readonly Door door;
 
         [MyCmpReq]
-        private LogicTimeOfDaySensor timeSensor;
+        private readonly LogicTimeOfDaySensor timeSensor;
 
         protected override void OnSpawn()
         {
@@ -60,10 +60,7 @@ namespace QualityOfLifeONI
             // If timer is Active (Green), Door is Opened. If Inactive (Red), Door is Locked.
             Door.ControlState newState = is_on ? Door.ControlState.Opened : Door.ControlState.Locked;
 
-            if (door != null)
-            {
-                door.QueueStateChange(newState);
-            }
+            door?.QueueStateChange(newState);
         }
     }
 }
