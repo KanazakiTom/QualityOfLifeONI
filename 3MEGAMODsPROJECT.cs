@@ -6,11 +6,14 @@ using System.Reflection.Emit;
 using Database;
 using HarmonyLib;
 using JetBrains.Annotations;
+using Klei.AI;
 using KMod;
+using Newtonsoft.Json;
+using PeterHan.PLib.Core;
+using PeterHan.PLib.Options;
 using TMPro;
 using TUNING;
 using UnityEngine;
-using SanchozzONIMods.Lib;
 
 namespace QualityOfLifeONI
 {
@@ -785,29 +788,29 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-    #region Mod: Bigger Building Menu
-    public class BiggerBuildingMenuPatches
-    {
-        [HarmonyPatch(typeof(PlanScreen))]
-        [HarmonyPatch("ConfigurePanelSize")]
-        public static class PlanScreen_ConfigurePanelSize_Patch
-        {
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                List<CodeInstruction> list = new List<CodeInstruction>(instructions);
-                for (int i = 1; i < list.Count; i++)
-                {
-                    if (list[i].opcode == OpCodes.Ldc_I4_6)
-                    {
-                        list[i].opcode = OpCodes.Ldc_I4;
-                        list[i].operand = ModInit.ConfigManager.Config.Height;
-                        break;
-                    }
-                }
-                return list.AsEnumerable<CodeInstruction>();
-            }
-        }
-    }
+    #region Mod: Bigger Building Menu *TODO*
+    //public class BiggerBuildingMenuPatches
+    //{
+    //    [HarmonyPatch(typeof(PlanScreen))]
+    //    [HarmonyPatch("ConfigurePanelSize")]
+    //    public static class PlanScreen_ConfigurePanelSize_Patch
+    //    {
+    //        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+    //        {
+    //            List<CodeInstruction> list = new List<CodeInstruction>(instructions);
+    //            for (int i = 1; i < list.Count; i++)
+    //            {
+    //                if (list[i].opcode == OpCodes.Ldc_I4_6)
+    //                {
+    //                    list[i].opcode = OpCodes.Ldc_I4;
+    //                    list[i].operand = ModInit.ConfigManager.Config.Height;
+    //                    break;
+    //                }
+    //            }
+    //            return list.AsEnumerable<CodeInstruction>();
+    //        }
+    //    }
+    //}
     #endregion
 
     #region Mod: Plan Buildings Without Materials
@@ -996,16 +999,70 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-    #region Mod: Wrangle & Carry
-    // Sent to ModInit
+    #region Mod: Wrangle & Carryno
+    // TODO
     #endregion
 
-    #region Mod: 
-
+    #region Mod: Customizable Speed
+    [HarmonyPatch(typeof(SpeedControlScreen), "OnChanged")]
+    public static class SpeedControlPatchOnChanged
+    {
+        public static bool Prefix(SpeedControlScreen __instance)
+        {
+            if (__instance.IsPaused)
+            {
+                Time.timeScale = 0f;
+            }
+            else
+            {
+                switch (__instance.GetSpeed())
+                {
+                    case 0:
+                        Time.timeScale = ModInit.Config.SlowSpeed;
+                        break;
+                    case 1:
+                        Time.timeScale = ModInit.Config.NormalSpeed;
+                        break;
+                    case 2:
+                        Time.timeScale = ModInit.Config.SuperSpeed;
+                        break;
+                }
+            }
+            return false;
+        }
+    }
     #endregion
 
-    #region Mod: 
+    #region Mod: Better Rad Pills Threshold
+    public static class BetterRadPillsPatches
+    {
+        [HarmonyPatch(typeof(MedicinalPillWorkable), "CanBeTakenBy")]
+        public static class MedicinalPillWorkable_CanBeTakenBy_Patch
+        {
+            public static void Postfix(MedicinalPill ___pill, GameObject consumer, ref bool __result)
+            {
+                if (!__result || ___pill == null || ___pill.info.id != "BasicRadPill") return;
 
+                var radiationAmount = consumer.GetAmounts()?.Get(Db.Get().Amounts.RadiationBalance.Id);
+                if (radiationAmount != null && radiationAmount.value < ModInit.Config.Rads)
+                {
+                    __result = false;
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(MedicinalPillWorkable), "OnSpawn")]
+        public static class MedicinalPillWorkable_OnSpawn_Patch
+        {
+            public static void Postfix(MedicinalPillWorkable __instance)
+            {
+                if (__instance?.pill?.info != null && __instance.pill.info.id == "BasicRadPill" && ModInit.Config.FasterAnim)
+                {
+                    __instance.SetWorkTime(1f);
+                }
+            }
+        }
+    }
     #endregion
 
     #region Mod: 
