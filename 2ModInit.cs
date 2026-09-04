@@ -31,20 +31,25 @@ namespace QualityOfLifeONI
             // Initialize target types for No Sensor Limits
             NoSensorLimitsPatches.InitializeTypes();
         }
+
         public override void OnLoad(Harmony harmony)
         {
-            // From No Mop Limit
-            MopTool.maxMopAmt = float.PositiveInfinity;
-
-            // Harmony base load
-            base.OnLoad(harmony);
-
+            // 1. MUST BE FIRST: Initialize PLib core before calling any PLib methods
             PUtil.InitLibrary();
 
-            // Register single master config class with PLib
-            new POptions().RegisterOptions(this, typeof(QoLConfig));
+            // 2. Safely initialize PLib patch manager and actions
+            PipPlantOverlayPatches.Init(harmony);
+            //NoWasteWantPatches.Init(harmony);
+            //ForbidItemsPatches.Init(harmony);
+            //EfficientFetchPatches.Init(harmony);
+            //FinishTasksPatches.Init(harmony);
 
-            // Load settings into memory at startup
+            // 3. Other initializations
+            MopTool.maxMopAmt = float.PositiveInfinity;
+
+            base.OnLoad(harmony);
+
+            new POptions().RegisterOptions(this, typeof(QoLConfig));
             Config = POptions.ReadSettings<QoLConfig>() ?? new QoLConfig();
 
             Console.WriteLine($"Mod <{Name}> loaded: {Version}");
