@@ -7,7 +7,7 @@ namespace QualityOfLifeONI
     public class AutoDigEntombedComponent : KMonoBehaviour, ISim1000ms
     {
         [MyCmpReq]
-        private Building building;
+        private readonly Building building;
 
         public void Sim1000ms(float dt)
         {

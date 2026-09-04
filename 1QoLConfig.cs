@@ -10,6 +10,7 @@ namespace QualityOfLifeONI
     [RestartRequired]
     public class QoLConfig
     {
+        #region Mod: QOL-BEETA
         // ------------------------------------------
         // CATEGORY: BEETA SETTINGS
         // ------------------------------------------
@@ -17,7 +18,9 @@ namespace QualityOfLifeONI
         [Limit(3, 8)]
         [JsonProperty]
         public int SleepBlocks { get; set; } = 3;
+        #endregion
 
+        #region Mod: QOL-Tool Filters
         // ------------------------------------------
         // CATEGORY: TOOL FILTERS
         // ------------------------------------------
@@ -61,7 +64,9 @@ namespace QualityOfLifeONI
         [Option("Default Priority Filter", "Select the default selection filter for the Priority tool.", "Tool Filters")]
         [JsonProperty]
         public PriorityFilterOptions DefaultPriorityFilter { get; set; } = PriorityFilterOptions.All;
+        #endregion
 
+        #region Mod: Customizable Speed
         // ------------------------------------------
         // CATEGORY: CUSTOMIZABLE SPEED
         // ------------------------------------------
@@ -79,7 +84,9 @@ namespace QualityOfLifeONI
         [Limit(0.0, 30.0)]
         [JsonProperty]
         public float SuperSpeed { get; set; } = 3f;
+        #endregion
 
+        #region Mod: Better Rad Pills
         // ------------------------------------------
         // CATEGORY: BETTER RAD PILLS
         // ------------------------------------------
@@ -91,7 +98,9 @@ namespace QualityOfLifeONI
         [Option("Faster animation", "Dupes ingest rad pills faster (10s => 1s).", "Better Rad Pills")]
         [JsonProperty]
         public bool FasterAnim { get; set; } = true;
+        #endregion
 
+        #region Mod: QOL - Cryo Condenser
         // ------------------------------------------
         // CATEGORY: CRYO CONDENSER
         // ------------------------------------------
@@ -132,6 +141,42 @@ namespace QualityOfLifeONI
             [Option("Enable Turbo Mode (Alpha)", "Enable the sidescreen button to toggle 4x speed and power mode.")]
             public bool EnableTurboMode { get; set; } = false;
         }
+        #endregion
+
+        #region Mod: Longer Arms
+        // ------------------------------------------
+        // CATEGORY: LONGER ARMS
+        // ------------------------------------------
+        [Option("Vertical Reach (cells)", "Number of additional cells beyond vanilla reach that duplicants can reach vertically (up/down). Vanilla allows 4 cells up, so setting this to 1 allows reaching cell 5. Default: 1. Range: 0-10.", "Longer Arms")]
+        [Limit(0.0, 10.0)]
+        [JsonProperty]
+        public int VerticalReach { get; set; } = 1;
+
+        [Option("Horizontal Reach (cells)", "Number of additional cells beyond vanilla reach that duplicants can reach horizontally (left/right). Default: 1. Range: 0-10.", "Longer Arms")]
+        [Limit(0.0, 10.0)]
+        [JsonProperty]
+        public int HorizontalReach { get; set; } = 1;
+
+        [Option("Safe Mode (Prevent Reach-Through-Walls)", "When enabled, horizontal reach is capped to prevent duplicants from reaching through solid tiles.", "Longer Arms")]
+        [JsonProperty]
+        public bool SafeMode { get; set; } = true;
+        #endregion
+
+        #region Mod:
+
+        #endregion
+
+        #region Mod:
+
+        #endregion
+
+        #region Mod:
+
+        #endregion
+
+        #region Mod:
+
+        #endregion
 
         public class CaiLibConfig
         {

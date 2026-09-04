@@ -24,6 +24,13 @@ namespace QualityOfLifeONI
         // Centralized config instance
         public static QoLConfig Config;
 
+        public override void OnAllModsLoaded(Harmony harmony, IReadOnlyList<Mod> mods)
+        {
+            base.OnAllModsLoaded(harmony, mods);
+
+            // Initialize target types for No Sensor Limits
+            NoSensorLimitsPatches.InitializeTypes();
+        }
         public override void OnLoad(Harmony harmony)
         {
             // From No Mop Limit

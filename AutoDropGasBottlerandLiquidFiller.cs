@@ -12,10 +12,10 @@ namespace QualityOfLifeONI
     public class AutoDropBottlerComponent : KMonoBehaviour, ISim1000ms, ISidescreenButtonControl
     {
         [MyCmpReq]
-        private Storage storage;
+        private readonly Storage storage;
 
         [MyCmpReq]
-        private Building building;
+        private readonly Building building;
 
         // Persist the button state in the player's save file
         [Serialize]

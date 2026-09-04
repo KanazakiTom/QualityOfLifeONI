@@ -138,7 +138,7 @@ namespace QualityOfLifeONI
         public static readonly HashedString PORT_ID = new HashedString("ArtifactCargoBayDropPort");
 
         [MyCmpGet]
-        private SingleEntityReceptacle receptacle;
+        private readonly SingleEntityReceptacle receptacle;
 
         private static readonly EventSystem.IntraObjectHandler<ArtifactCargoBayAutomation> OnLogicEventDelegate =
             new EventSystem.IntraObjectHandler<ArtifactCargoBayAutomation>((component, data) => component.OnLogicEvent(data));
