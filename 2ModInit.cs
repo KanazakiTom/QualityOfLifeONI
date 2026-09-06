@@ -39,8 +39,8 @@ namespace QualityOfLifeONI
 
             // 2. Safely initialize PLib patch manager and actions
             PipPlantOverlayPatches.Init(harmony);
-            //NoWasteWantPatches.Init(harmony);
-            //ForbidItemsPatches.Init(harmony);
+            NoWasteWantPatches.Init(harmony);
+            ForbidItemsPatches.Init(harmony);
             //EfficientFetchPatches.Init(harmony);
             //FinishTasksPatches.Init(harmony);
 

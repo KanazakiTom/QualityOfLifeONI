@@ -3059,648 +3059,648 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-    //#region Mod: Waste Not Want Not
-    //public static class NoWasteWantStrings
-    //{
-    //    public static class UI
-    //    {
-    //        public static class UISIDESCREENS
-    //        {
-    //            public static class FRESHNESS_CONTROL_SIDE_SCREEN
-    //            {
-    //                public static LocString TITLE = "Freshness Control";
-    //                public static LocString TOOLTIP = "Will accept <b>Food</b> with a <b>Freshness</b> of at least <b>{0:F0}</b> %";
-    //            }
-    //        }
-    //    }
-    //}
+    #region Mod: Waste Not Want Not
+    public static class NoWasteWantStrings
+    {
+        public static class UI
+        {
+            public static class UISIDESCREENS
+            {
+                public static class FRESHNESS_CONTROL_SIDE_SCREEN
+                {
+                    public static LocString TITLE = "Freshness Control";
+                    public static LocString TOOLTIP = "Will accept <b>Food</b> with a <b>Freshness</b> of at least <b>{0:F0}</b> %";
+                }
+            }
+        }
+    }
 
-    //[SerializationConfig(KSerialization.MemberSerialization.OptIn)]
-    //public class FreshnessControl : KMonoBehaviour, ISim4000ms, ISingleSliderControl, ISliderControl
-    //{
-    //    private static readonly EventSystem.IntraObjectHandler<FreshnessControl> OnCopySettingsDelegate = new EventSystem.IntraObjectHandler<FreshnessControl>(delegate (FreshnessControl component, object data)
-    //    {
-    //        component.OnCopySettings(data);
-    //    });
+    [SerializationConfig(KSerialization.MemberSerialization.OptIn)]
+    public class FreshnessControl : KMonoBehaviour, ISim4000ms, ISingleSliderControl, ISliderControl
+    {
+        private static readonly EventSystem.IntraObjectHandler<FreshnessControl> OnCopySettingsDelegate = new EventSystem.IntraObjectHandler<FreshnessControl>(delegate (FreshnessControl component, object data)
+        {
+            component.OnCopySettings(data);
+        });
 
-    //    [Serialize]
-    //    private float minFreshness;
+        [Serialize]
+        private float minFreshness;
 
-    //    [MyCmpGet]
-    //    private readonly Storage storage;
+        [MyCmpGet]
+        private readonly Storage storage;
 
-    //    public float MinFreshness
-    //    {
-    //        get => minFreshness;
-    //        set
-    //        {
-    //            minFreshness = value;
-    //            DropStaleItems();
-    //        }
-    //    }
+        public float MinFreshness
+        {
+            get => minFreshness;
+            set
+            {
+                minFreshness = value;
+                DropStaleItems();
+            }
+        }
 
-    //    public string SliderTitleKey => "STRINGS.UI.UISIDESCREENS.FRESHNESS_CONTROL_SIDE_SCREEN.TITLE";
-    //    public string SliderUnits => UI.UNITSUFFIXES.PERCENT;
+        public string SliderTitleKey => "STRINGS.UI.UISIDESCREENS.FRESHNESS_CONTROL_SIDE_SCREEN.TITLE";
+        public string SliderUnits => UI.UNITSUFFIXES.PERCENT;
 
-    //    public FreshnessControl()
-    //    {
-    //        minFreshness = 0f;
-    //    }
+        public FreshnessControl()
+        {
+            minFreshness = 0f;
+        }
 
-    //    protected override void OnPrefabInit()
-    //    {
-    //        base.OnPrefabInit();
-    //        Subscribe(-905833192, OnCopySettingsDelegate);
-    //    }
+        protected override void OnPrefabInit()
+        {
+            base.OnPrefabInit();
+            Subscribe(-905833192, OnCopySettingsDelegate);
+        }
 
-    //    private void OnCopySettings(object data)
-    //    {
-    //        FreshnessControl component = ((GameObject)data).GetComponent<FreshnessControl>();
-    //        if (component != null)
-    //        {
-    //            minFreshness = component.minFreshness;
-    //            DropStaleItems();
-    //        }
-    //    }
+        private void OnCopySettings(object data)
+        {
+            FreshnessControl component = ((GameObject)data).GetComponent<FreshnessControl>();
+            if (component != null)
+            {
+                minFreshness = component.minFreshness;
+                DropStaleItems();
+            }
+        }
 
-    //    public void DropStaleItems()
-    //    {
-    //        if (storage != null && minFreshness > 0f)
-    //        {
-    //            var pooledList = ListPool<GameObject, FreshnessControl>.Allocate();
-    //            foreach (GameObject gameObject in storage.items)
-    //            {
-    //                if (gameObject != null && !IsAcceptable(gameObject))
-    //                {
-    //                    pooledList.Add(gameObject);
-    //                }
-    //            }
-    //            foreach (GameObject go in pooledList)
-    //            {
-    //                storage.Drop(go, false);
-    //            }
-    //            pooledList.Recycle();
-    //        }
-    //    }
+        public void DropStaleItems()
+        {
+            if (storage != null && minFreshness > 0f)
+            {
+                var pooledList = ListPool<GameObject, FreshnessControl>.Allocate();
+                foreach (GameObject gameObject in storage.items)
+                {
+                    if (gameObject != null && !IsAcceptable(gameObject))
+                    {
+                        pooledList.Add(gameObject);
+                    }
+                }
+                foreach (GameObject go in pooledList)
+                {
+                    storage.Drop(go, false);
+                }
+                pooledList.Recycle();
+            }
+        }
 
-    //    public float GetSliderMax(int index) => 100f;
-    //    public float GetSliderMin(int index) => 0f;
-    //    public float GetSliderValue(int index) => MinFreshness * 100f;
+        public float GetSliderMax(int index) => 100f;
+        public float GetSliderMin(int index) => 0f;
+        public float GetSliderValue(int index) => MinFreshness * 100f;
 
-    //    public string GetSliderTooltip()
-    //    {
-    //        return string.Format(Strings.Get(GetSliderTooltipKey(0)), MinFreshness * 100f);
-    //    }
+        public string GetSliderTooltip()
+        {
+            return string.Format(Strings.Get(GetSliderTooltipKey(0)), MinFreshness * 100f);
+        }
 
-    //    public string GetSliderTooltip(int index)
-    //    {
-    //        return string.Format(Strings.Get(GetSliderTooltipKey(index)), MinFreshness * 100f);
-    //    }
+        public string GetSliderTooltip(int index)
+        {
+            return string.Format(Strings.Get(GetSliderTooltipKey(index)), MinFreshness * 100f);
+        }
 
-    //    public string GetSliderTooltipKey(int index)
-    //    {
-    //        return "STRINGS.UI.UISIDESCREENS.FRESHNESS_CONTROL_SIDE_SCREEN.TOOLTIP";
-    //    }
+        public string GetSliderTooltipKey(int index)
+        {
+            return "STRINGS.UI.UISIDESCREENS.FRESHNESS_CONTROL_SIDE_SCREEN.TOOLTIP";
+        }
 
-    //    public bool IsAcceptable(GameObject item)
-    //    {
-    //        Rottable.Instance smi;
-    //        return item != null && ((smi = item.GetSMI<Rottable.Instance>()) == null || smi.RotConstitutionPercentage >= minFreshness);
-    //    }
+        public bool IsAcceptable(GameObject item)
+        {
+            Rottable.Instance smi;
+            return item != null && ((smi = item.GetSMI<Rottable.Instance>()) == null || smi.RotConstitutionPercentage >= minFreshness);
+        }
 
-    //    public void SetSliderValue(float percent, int index)
-    //    {
-    //        MinFreshness = percent * 0.01f;
-    //    }
+        public void SetSliderValue(float percent, int index)
+        {
+            MinFreshness = percent * 0.01f;
+        }
 
-    //    public void Sim4000ms(float dt)
-    //    {
-    //        DropStaleItems();
-    //    }
+        public void Sim4000ms(float dt)
+        {
+            DropStaleItems();
+        }
 
-    //    public int SliderDecimalPlaces(int index) => 0;
-    //}
+        public int SliderDecimalPlaces(int index) => 0;
+    }
 
-    //public sealed class NoWasteWantPatches
-    //{
-    //    private static readonly Tag[] EDIBLE_TAGS = new Tag[]
-    //    {
-    //        GameTags.CookingIngredient,
-    //        GameTags.Edible
-    //    };
+    public sealed class NoWasteWantPatches
+    {
+        private static readonly Tag[] EDIBLE_TAGS = new Tag[]
+        {
+            GameTags.CookingIngredient,
+            GameTags.Edible
+        };
 
-    //    private const float MASS_TO_ROT = 0.01f;
+        private const float MASS_TO_ROT = 0.01f;
 
-    //    [PLibPatch(1U, "Compare", PatchType = HarmonyPatchType.Transpiler, RequireType = "PeterHan.EfficientFetch.EfficientFetchManager+FetchData", RequireAssembly = "EfficientFetch")]
-    //    internal static IEnumerable<CodeInstruction> FixEfficientSupply(IEnumerable<CodeInstruction> method)
-    //    {
-    //        PUtil.LogDebug("Applying patch for Efficient Supply");
-    //        return TranspileNegateLast(method);
-    //    }
+        [PLibPatch(1U, "Compare", PatchType = HarmonyPatchType.Transpiler, RequireType = "PeterHan.EfficientFetch.EfficientFetchManager+FetchData", RequireAssembly = "EfficientFetch")]
+        internal static IEnumerable<CodeInstruction> FixEfficientSupply(IEnumerable<CodeInstruction> method)
+        {
+            PUtil.LogDebug("Applying patch for Efficient Supply");
+            return TranspileNegateLast(method);
+        }
 
-    //    public static void AddFreshnessControl(GameObject go)
-    //    {
-    //        go.AddOrGet<FreshnessControl>();
-    //    }
+        public static void AddFreshnessControl(GameObject go)
+        {
+            go.AddOrGet<FreshnessControl>();
+        }
 
-    //    private static int AlignFreshness(int oldFreshness, Edible target)
-    //    {
-    //        if (target != null && !target.FoodInfo.CanRot)
-    //        {
-    //            oldFreshness = int.MaxValue;
-    //        }
-    //        return oldFreshness;
-    //    }
+        private static int AlignFreshness(int oldFreshness, Edible target)
+        {
+            if (target != null && !target.FoodInfo.CanRot)
+            {
+                oldFreshness = int.MaxValue;
+            }
+            return oldFreshness;
+        }
 
-    //    public static void Init(Harmony harmony)
-    //    {
-    //        new PPatchManager(harmony).RegisterPatchClass(typeof(NoWasteWantPatches));
-    //        LocString.CreateLocStringKeys(typeof(NoWasteWantStrings.UI), "STRINGS.");
-    //        new PLocalization().Register(null);
-    //    }
+        public static void Init(Harmony harmony)
+        {
+            new PPatchManager(harmony).RegisterPatchClass(typeof(NoWasteWantPatches));
+            LocString.CreateLocStringKeys(typeof(NoWasteWantStrings.UI), "STRINGS.");
+            new PLocalization().Register(null);
+        }
 
-    //    private static void ReplaceRotHandler(Rottable sm)
-    //    {
-    //        List<StateMachine.Action> enterActions = sm.Spoiled.enterActions;
-    //        if (enterActions != null)
-    //        {
-    //            List<StateMachine<Rottable, Rottable.Instance, IStateMachineTarget, Rottable.Def>.State.Callback> targets = new List<StateMachine<Rottable, Rottable.Instance, IStateMachineTarget, Rottable.Def>.State.Callback>(enterActions.Count);
-    //            foreach (StateMachine.Action action in enterActions)
-    //            {
-    //                if (action.callback is StateMachine<Rottable, Rottable.Instance, IStateMachineTarget, Rottable.Def>.State.Callback callback)
-    //                {
-    //                    targets.Add(callback);
-    //                }
-    //            }
-    //            enterActions.Clear();
-    //            sm.Spoiled.Enter(delegate (Rottable.Instance smi)
-    //            {
-    //                GameObject gameObject = smi.master.gameObject;
-    //                if (gameObject != null)
-    //                {
-    //                    if (!gameObject.TryGetComponent<PrimaryElement>(out var primaryElement) || primaryElement.Mass > 0.01f)
-    //                    {
-    //                        using (var enumerator2 = targets.GetEnumerator())
-    //                        {
-    //                            while (enumerator2.MoveNext())
-    //                            {
-    //                                var callback2 = enumerator2.Current;
-    //                                callback2(smi);
-    //                            }
-    //                            return;
-    //                        }
-    //                    }
-    //                    Util.KDestroyGameObject(gameObject);
-    //                }
-    //            });
-    //        }
-    //    }
+        private static void ReplaceRotHandler(Rottable sm)
+        {
+            List<StateMachine.Action> enterActions = sm.Spoiled.enterActions;
+            if (enterActions != null)
+            {
+                List<StateMachine<Rottable, Rottable.Instance, IStateMachineTarget, Rottable.Def>.State.Callback> targets = new List<StateMachine<Rottable, Rottable.Instance, IStateMachineTarget, Rottable.Def>.State.Callback>(enterActions.Count);
+                foreach (StateMachine.Action action in enterActions)
+                {
+                    if (action.callback is StateMachine<Rottable, Rottable.Instance, IStateMachineTarget, Rottable.Def>.State.Callback callback)
+                    {
+                        targets.Add(callback);
+                    }
+                }
+                enterActions.Clear();
+                sm.Spoiled.Enter(delegate (Rottable.Instance smi)
+                {
+                    GameObject gameObject = smi.master.gameObject;
+                    if (gameObject != null)
+                    {
+                        if (!gameObject.TryGetComponent<PrimaryElement>(out var primaryElement) || primaryElement.Mass > 0.01f)
+                        {
+                            using (var enumerator2 = targets.GetEnumerator())
+                            {
+                                while (enumerator2.MoveNext())
+                                {
+                                    var callback2 = enumerator2.Current;
+                                    callback2(smi);
+                                }
+                                return;
+                            }
+                        }
+                        Util.KDestroyGameObject(gameObject);
+                    }
+                });
+            }
+        }
 
-    //    private static IEnumerable<CodeInstruction> TranspileNegateLast(IEnumerable<CodeInstruction> method)
-    //    {
-    //        List<CodeInstruction> list = new List<CodeInstruction>(method);
-    //        int count = list.Count;
-    //        MethodInfo methodSafe = typeof(int).GetMethodSafe("CompareTo", false, new Type[] { typeof(int) });
-    //        for (int i = count - 1; i > 0; i--)
-    //        {
-    //            CodeInstruction codeInstruction = list[i];
-    //            if (codeInstruction.opcode == OpCodes.Call && codeInstruction.operand as MethodBase == methodSafe)
-    //            {
-    //                list.Insert(i + 1, new CodeInstruction(OpCodes.Neg, null));
-    //                break;
-    //            }
-    //        }
-    //        return list;
-    //    }
+        private static IEnumerable<CodeInstruction> TranspileNegateLast(IEnumerable<CodeInstruction> method)
+        {
+            List<CodeInstruction> list = new List<CodeInstruction>(method);
+            int count = list.Count;
+            MethodInfo methodSafe = typeof(int).GetMethodSafe("CompareTo", false, new Type[] { typeof(int) });
+            for (int i = count - 1; i > 0; i--)
+            {
+                CodeInstruction codeInstruction = list[i];
+                if (codeInstruction.opcode == OpCodes.Call && codeInstruction.operand as MethodBase == methodSafe)
+                {
+                    list.Insert(i + 1, new CodeInstruction(OpCodes.Neg, null));
+                    break;
+                }
+            }
+            return list;
+        }
 
-    //    [HarmonyPatch(typeof(FetchManager), "IsFetchablePickup_Exclude", new Type[]
-    //    {
-    //        typeof(KPrefabID),
-    //        typeof(Storage),
-    //        typeof(float),
-    //        typeof(HashSet<Tag>),
-    //        typeof(Tag),
-    //        typeof(Storage)
-    //    })]
-    //    public static class FetchManager_IsFetchablePickupExclude_Patch
-    //    {
-    //        internal static void Postfix(KPrefabID pickup_id, Storage destination, ref bool __result)
-    //        {
-    //            if (__result && pickup_id != null && destination != null && pickup_id.HasAnyTags(EDIBLE_TAGS) && destination.TryGetComponent<FreshnessControl>(out var freshnessControl))
-    //            {
-    //                __result = freshnessControl.IsAcceptable(pickup_id.gameObject);
-    //            }
-    //        }
-    //    }
+        [HarmonyPatch(typeof(FetchManager), "IsFetchablePickup_Exclude", new Type[]
+        {
+            typeof(KPrefabID),
+            typeof(Storage),
+            typeof(float),
+            typeof(HashSet<Tag>),
+            typeof(Tag),
+            typeof(Storage)
+        })]
+        public static class FetchManager_IsFetchablePickupExclude_Patch
+        {
+            internal static void Postfix(KPrefabID pickup_id, Storage destination, ref bool __result)
+            {
+                if (__result && pickup_id != null && destination != null && pickup_id.HasAnyTags(EDIBLE_TAGS) && destination.TryGetComponent<FreshnessControl>(out var freshnessControl))
+                {
+                    __result = freshnessControl.IsAcceptable(pickup_id.gameObject);
+                }
+            }
+        }
 
-    //    [HarmonyPatch(typeof(FetchManager.FetchablesByPrefabId), "AddPickupable")]
-    //    public static class FetchManager_FetchablesByPrefabId_AddPickupable_Patch
-    //    {
-    //        internal static IEnumerable<CodeInstruction> Transpiler(ILGenerator generator, IEnumerable<CodeInstruction> method)
-    //        {
-    //            FieldInfo targetField = typeof(FetchManager.Fetchable).GetFieldSafe("freshness", false);
-    //            MethodInfo insertion = typeof(NoWasteWantPatches).GetMethodSafe("AlignFreshness", true, new Type[]
-    //            {
-    //                typeof(int),
-    //                typeof(Edible)
-    //            });
-    //            LocalBuilder local = generator.DeclareLocal(typeof(Edible));
-    //            yield return new CodeInstruction(OpCodes.Ldnull, null);
-    //            yield return new CodeInstruction(OpCodes.Stloc, local.LocalIndex);
-    //            foreach (CodeInstruction instruction in method)
-    //            {
-    //                OpCode opcode = instruction.opcode;
-    //                if (opcode == OpCodes.Stfld)
-    //                {
-    //                    FieldInfo fieldInfo = instruction.operand as FieldInfo;
-    //                    if (fieldInfo != null && fieldInfo == targetField)
-    //                    {
-    //                        yield return new CodeInstruction(OpCodes.Ldloc, local.LocalIndex);
-    //                        yield return new CodeInstruction(OpCodes.Call, insertion);
-    //                    }
-    //                }
-    //                yield return instruction;
-    //                if (opcode == OpCodes.Callvirt)
-    //                {
-    //                    MethodInfo methodInfo = instruction.operand as MethodInfo;
-    //                    if (methodInfo != null && methodInfo.ReturnType == typeof(Edible) && methodInfo.Name == "GetComponent")
-    //                    {
-    //                        yield return new CodeInstruction(OpCodes.Dup, null);
-    //                        yield return new CodeInstruction(OpCodes.Stloc, local.LocalIndex);
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
+        [HarmonyPatch(typeof(FetchManager.FetchablesByPrefabId), "AddPickupable")]
+        public static class FetchManager_FetchablesByPrefabId_AddPickupable_Patch
+        {
+            internal static IEnumerable<CodeInstruction> Transpiler(ILGenerator generator, IEnumerable<CodeInstruction> method)
+            {
+                FieldInfo targetField = typeof(FetchManager.Fetchable).GetFieldSafe("freshness", false);
+                MethodInfo insertion = typeof(NoWasteWantPatches).GetMethodSafe("AlignFreshness", true, new Type[]
+                {
+                    typeof(int),
+                    typeof(Edible)
+                });
+                LocalBuilder local = generator.DeclareLocal(typeof(Edible));
+                yield return new CodeInstruction(OpCodes.Ldnull, null);
+                yield return new CodeInstruction(OpCodes.Stloc, local.LocalIndex);
+                foreach (CodeInstruction instruction in method)
+                {
+                    OpCode opcode = instruction.opcode;
+                    if (opcode == OpCodes.Stfld)
+                    {
+                        FieldInfo fieldInfo = instruction.operand as FieldInfo;
+                        if (fieldInfo != null && fieldInfo == targetField)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc, local.LocalIndex);
+                            yield return new CodeInstruction(OpCodes.Call, insertion);
+                        }
+                    }
+                    yield return instruction;
+                    if (opcode == OpCodes.Callvirt)
+                    {
+                        MethodInfo methodInfo = instruction.operand as MethodInfo;
+                        if (methodInfo != null && methodInfo.ReturnType == typeof(Edible) && methodInfo.Name == "GetComponent")
+                        {
+                            yield return new CodeInstruction(OpCodes.Dup, null);
+                            yield return new CodeInstruction(OpCodes.Stloc, local.LocalIndex);
+                        }
+                    }
+                }
+            }
+        }
 
-    //    [HarmonyPatch(typeof(FetchManager), "IsFetchablePickup", new Type[]
-    //    {
-    //        typeof(Pickupable),
-    //        typeof(FetchChore),
-    //        typeof(Storage)
-    //    })]
-    //    public static class FetchManager_IsFetchablePickup_Patch
-    //    {
-    //        internal static void Postfix(Pickupable pickup, Storage destination, ref bool __result)
-    //        {
-    //            if (__result && pickup != null && destination != null && pickup.KPrefabID.HasAnyTags(EDIBLE_TAGS) && destination.TryGetComponent<FreshnessControl>(out var freshnessControl))
-    //            {
-    //                __result = freshnessControl.IsAcceptable(pickup.gameObject);
-    //            }
-    //        }
-    //    }
+        [HarmonyPatch(typeof(FetchManager), "IsFetchablePickup", new Type[]
+        {
+            typeof(Pickupable),
+            typeof(FetchChore),
+            typeof(Storage)
+        })]
+        public static class FetchManager_IsFetchablePickup_Patch
+        {
+            internal static void Postfix(Pickupable pickup, Storage destination, ref bool __result)
+            {
+                if (__result && pickup != null && destination != null && pickup.KPrefabID.HasAnyTags(EDIBLE_TAGS) && destination.TryGetComponent<FreshnessControl>(out var freshnessControl))
+                {
+                    __result = freshnessControl.IsAcceptable(pickup.gameObject);
+                }
+            }
+        }
 
-    //    [HarmonyPatch]
-    //    public static class FetchManager_PickupComparerIncludingPriority_Patch
-    //    {
-    //        internal static MethodBase TargetMethod()
-    //        {
-    //            Type nestedType = typeof(FetchManager).GetNestedType("PickupComparerIncludingPriority", BindingFlags.Public | BindingFlags.NonPublic);
-    //            if (nestedType == null)
-    //            {
-    //                return null;
-    //            }
-    //            return nestedType.GetMethod("Compare", BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[]
-    //            {
-    //                typeof(FetchManager.Pickup),
-    //                typeof(FetchManager.Pickup)
-    //            }, null);
-    //        }
+        [HarmonyPatch]
+        public static class FetchManager_PickupComparerIncludingPriority_Patch
+        {
+            internal static MethodBase TargetMethod()
+            {
+                Type nestedType = typeof(FetchManager).GetNestedType("PickupComparerIncludingPriority", BindingFlags.Public | BindingFlags.NonPublic);
+                if (nestedType == null)
+                {
+                    return null;
+                }
+                return nestedType.GetMethod("Compare", BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[]
+                {
+                    typeof(FetchManager.Pickup),
+                    typeof(FetchManager.Pickup)
+                }, null);
+            }
 
-    //        internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> method)
-    //        {
-    //            return TranspileNegateLast(method);
-    //        }
-    //    }
+            internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> method)
+            {
+                return TranspileNegateLast(method);
+            }
+        }
 
-    //    [HarmonyPatch]
-    //    public static class FetchManager_PickupComparerNoPriority_Patch
-    //    {
-    //        internal static MethodBase TargetMethod()
-    //        {
-    //            Type nestedType = typeof(FetchManager).GetNestedType("PickupComparerNoPriority", BindingFlags.Public | BindingFlags.NonPublic);
-    //            if (nestedType == null)
-    //            {
-    //                return null;
-    //            }
-    //            return nestedType.GetMethod("Compare", BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[]
-    //            {
-    //                typeof(FetchManager.Pickup),
-    //                typeof(FetchManager.Pickup)
-    //            }, null);
-    //        }
+        [HarmonyPatch]
+        public static class FetchManager_PickupComparerNoPriority_Patch
+        {
+            internal static MethodBase TargetMethod()
+            {
+                Type nestedType = typeof(FetchManager).GetNestedType("PickupComparerNoPriority", BindingFlags.Public | BindingFlags.NonPublic);
+                if (nestedType == null)
+                {
+                    return null;
+                }
+                return nestedType.GetMethod("Compare", BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[]
+                {
+                    typeof(FetchManager.Pickup),
+                    typeof(FetchManager.Pickup)
+                }, null);
+            }
 
-    //        internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> method)
-    //        {
-    //            return TranspileNegateLast(method);
-    //        }
-    //    }
+            internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> method)
+            {
+                return TranspileNegateLast(method);
+            }
+        }
 
-    //    [HarmonyPatch(typeof(RefrigeratorConfig), "DoPostConfigureComplete")]
-    //    public static class RefrigeratorConfig_DoPostConfigureComplete_Patch
-    //    {
-    //        internal static void Postfix(GameObject go)
-    //        {
-    //            AddFreshnessControl(go);
-    //        }
-    //    }
+        [HarmonyPatch(typeof(RefrigeratorConfig), "DoPostConfigureComplete")]
+        public static class RefrigeratorConfig_DoPostConfigureComplete_Patch
+        {
+            internal static void Postfix(GameObject go)
+            {
+                AddFreshnessControl(go);
+            }
+        }
 
-    //    [HarmonyPatch(typeof(RationBoxConfig), "DoPostConfigureComplete")]
-    //    public static class RationBoxConfig_DoPostConfigureComplete_Patch
-    //    {
-    //        internal static void Postfix(GameObject go)
-    //        {
-    //            AddFreshnessControl(go);
-    //        }
-    //    }
+        [HarmonyPatch(typeof(RationBoxConfig), "DoPostConfigureComplete")]
+        public static class RationBoxConfig_DoPostConfigureComplete_Patch
+        {
+            internal static void Postfix(GameObject go)
+            {
+                AddFreshnessControl(go);
+            }
+        }
 
-    //    [HarmonyPatch(typeof(Rottable), "InitializeStates")]
-    //    public static class Rottable_InitializeStates_Patch
-    //    {
-    //        internal static void Postfix(Rottable __instance)
-    //        {
-    //            ReplaceRotHandler(__instance);
-    //        }
-    //    }
+        [HarmonyPatch(typeof(Rottable), "InitializeStates")]
+        public static class Rottable_InitializeStates_Patch
+        {
+            internal static void Postfix(Rottable __instance)
+            {
+                ReplaceRotHandler(__instance);
+            }
+        }
 
-    //    [HarmonyPatch(typeof(SapTree.StatesInstance), "CheckForFood")]
-    //    public static class SapTree_StatesInstance_CheckForFood_Patch
-    //    {
-    //        private static readonly IDetouredField<SapTree.StatesInstance, Extents> FEED_EXTENTS = PDetours.DetourFieldLazy<SapTree.StatesInstance, Extents>("feedExtents");
-    //        private static readonly IDetouredField<SapTree, StateMachine<SapTree, SapTree.StatesInstance, IStateMachineTarget, SapTree.Def>.TargetParameter> FOOD_ITEM = PDetours.DetourFieldLazy<SapTree, StateMachine<SapTree, SapTree.StatesInstance, IStateMachineTarget, SapTree.Def>.TargetParameter>("foodItem");
+        [HarmonyPatch(typeof(SapTree.StatesInstance), "CheckForFood")]
+        public static class SapTree_StatesInstance_CheckForFood_Patch
+        {
+            private static readonly IDetouredField<SapTree.StatesInstance, Extents> FEED_EXTENTS = PDetours.DetourFieldLazy<SapTree.StatesInstance, Extents>("feedExtents");
+            private static readonly IDetouredField<SapTree, StateMachine<SapTree, SapTree.StatesInstance, IStateMachineTarget, SapTree.Def>.TargetParameter> FOOD_ITEM = PDetours.DetourFieldLazy<SapTree, StateMachine<SapTree, SapTree.StatesInstance, IStateMachineTarget, SapTree.Def>.TargetParameter>("foodItem");
 
-    //        [HarmonyPriority(500)]
-    //        [Obsolete]
-    //        internal static bool Prefix(SapTree.StatesInstance __instance)
-    //        {
-    //            var pooledList = ListPool<ScenePartitionerEntry, SapTree>.Allocate();
-    //            GameScenePartitioner instance = GameScenePartitioner.Instance;
-    //            GameObject value = null;
-    //            float num = float.MaxValue;
-    //            instance.GatherEntries(FEED_EXTENTS.Get(__instance), instance.pickupablesLayer, pooledList);
-    //            int count = pooledList.Count;
-    //            for (int i = 0; i < count; i++)
-    //            {
-    //                Pickupable pickupable = pooledList[i].obj as Pickupable;
-    //                if (pickupable != null && pickupable.TryGetComponent<Edible>(out var edible))
-    //                {
-    //                    float num2 = float.MaxValue;
-    //                    Rottable.Instance smi;
-    //                    if (edible.FoodInfo.CanRot && (smi = edible.GetSMI<Rottable.Instance>()) != null)
-    //                    {
-    //                        num2 = smi.RotConstitutionPercentage;
-    //                    }
-    //                    if (num2 <= num)
-    //                    {
-    //                        value = pickupable.gameObject;
-    //                        num = num2;
-    //                    }
-    //                }
-    //            }
-    //            FOOD_ITEM.Get(__instance.sm).Set(value, __instance, false);
-    //            pooledList.Recycle();
-    //            return false;
-    //        }
-    //    }
-    //}
-    //#endregion
+            [HarmonyPriority(500)]
+            [Obsolete]
+            internal static bool Prefix(SapTree.StatesInstance __instance)
+            {
+                var pooledList = ListPool<ScenePartitionerEntry, SapTree>.Allocate();
+                GameScenePartitioner instance = GameScenePartitioner.Instance;
+                GameObject value = null;
+                float num = float.MaxValue;
+                instance.GatherEntries(FEED_EXTENTS.Get(__instance), instance.pickupablesLayer, pooledList);
+                int count = pooledList.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    Pickupable pickupable = pooledList[i].obj as Pickupable;
+                    if (pickupable != null && pickupable.TryGetComponent<Edible>(out var edible))
+                    {
+                        float num2 = float.MaxValue;
+                        Rottable.Instance smi;
+                        if (edible.FoodInfo.CanRot && (smi = edible.GetSMI<Rottable.Instance>()) != null)
+                        {
+                            num2 = smi.RotConstitutionPercentage;
+                        }
+                        if (num2 <= num)
+                        {
+                            value = pickupable.gameObject;
+                            num = num2;
+                        }
+                    }
+                }
+                FOOD_ITEM.Get(__instance.sm).Set(value, __instance, false);
+                pooledList.Recycle();
+                return false;
+            }
+        }
+    }
+    #endregion
 
-    //#region Mod: Forbid Items
-    //public static class ForbidItemsStrings
-    //{
-    //    public static class MISC
-    //    {
-    //        public static class STATUSITEMS
-    //        {
-    //            public static class FORBIDDEN
-    //            {
-    //                public static LocString NAME = "Item Forbidden";
-    //                public static LocString TOOLTIP = "This item cannot be picked up by Duplicants or " + STRINGS.UI.PRE_KEYWORD + "Auto-Sweepers" + STRINGS.UI.PST_KEYWORD;
-    //            }
-    //        }
-    //    }
+    #region Mod: Forbid Items
+    public static class ForbidItemsStrings
+    {
+        public static class MISC
+        {
+            public static class STATUSITEMS
+            {
+                public static class FORBIDDEN
+                {
+                    public static LocString NAME = "Item Forbidden";
+                    public static LocString TOOLTIP = "This item cannot be picked up by Duplicants or " + STRINGS.UI.PRE_KEYWORD + "Auto-Sweepers" + STRINGS.UI.PST_KEYWORD;
+                }
+            }
+        }
 
-    //    public static class UI
-    //    {
-    //        public static class USERMENUACTIONS
-    //        {
-    //            public static class FORBIDITEM
-    //            {
-    //                public static LocString NAME = "Forbid Item";
-    //                public static LocString NAME_OFF = "Reclaim Item";
-    //                public static LocString TOOLTIP = "Prevent this item from being picked up";
-    //                public static LocString TOOLTIP_OFF = "Allow this item to be picked up";
-    //            }
-    //        }
-    //    }
-    //}
+        public static class UI
+        {
+            public static class USERMENUACTIONS
+            {
+                public static class FORBIDITEM
+                {
+                    public static LocString NAME = "Forbid Item";
+                    public static LocString NAME_OFF = "Reclaim Item";
+                    public static LocString TOOLTIP = "Prevent this item from being picked up";
+                    public static LocString TOOLTIP_OFF = "Allow this item to be picked up";
+                }
+            }
+        }
+    }
 
-    //[SerializationConfig(KSerialization.MemberSerialization.OptIn)]
-    //public sealed class Forbiddable : KMonoBehaviour
-    //{
-    //    [MyCmpGet]
-    //    private readonly Clearable clearable;
+    [SerializationConfig(KSerialization.MemberSerialization.OptIn)]
+    public sealed class Forbiddable : KMonoBehaviour
+    {
+        [MyCmpGet]
+        private readonly Clearable clearable;
 
-    //    [MyCmpReq]
-    //    private readonly KPrefabID prefabID;
+        [MyCmpReq]
+        private readonly KPrefabID prefabID;
 
-    //    [MyCmpReq]
-    //    private readonly KSelectable selectable;
+        [MyCmpReq]
+        private readonly KSelectable selectable;
 
-    //    private Guid forbiddenStatus;
+        private Guid forbiddenStatus;
 
-    //    public void Forbid()
-    //    {
-    //        GameObject gameObject = base.gameObject;
-    //        if (gameObject != null)
-    //        {
-    //            prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
-    //            Game.Instance.userMenu.Refresh(gameObject);
-    //        }
-    //    }
+        public void Forbid()
+        {
+            GameObject gameObject = base.gameObject;
+            if (gameObject != null)
+            {
+                prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
+                Game.Instance.userMenu.Refresh(gameObject);
+            }
+        }
 
-    //    public void Reclaim()
-    //    {
-    //        GameObject gameObject = base.gameObject;
-    //        if (gameObject != null)
-    //        {
-    //            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //            Game.Instance.userMenu.Refresh(gameObject);
-    //        }
-    //    }
+        public void Reclaim()
+        {
+            GameObject gameObject = base.gameObject;
+            if (gameObject != null)
+            {
+                prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+                prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+                Game.Instance.userMenu.Refresh(gameObject);
+            }
+        }
 
-    //    protected override void OnSpawn()
-    //    {
-    //        base.OnSpawn();
-    //        Subscribe(-1582839653, OnTagsChanged);
-    //        Subscribe(-2064133523, OnAbsorb);
-    //        Subscribe(856640610, OnStore);
-    //        Subscribe(493375141, OnRefreshUserMenu);
-    //        RefreshStatus();
-    //    }
+        protected override void OnSpawn()
+        {
+            base.OnSpawn();
+            Subscribe(-1582839653, OnTagsChanged);
+            Subscribe(-2064133523, OnAbsorb);
+            Subscribe(856640610, OnStore);
+            Subscribe(493375141, OnRefreshUserMenu);
+            RefreshStatus();
+        }
 
-    //    protected override void OnCleanUp()
-    //    {
-    //        base.OnCleanUp();
-    //        Unsubscribe(493375141);
-    //        Unsubscribe(-2064133523);
-    //        Unsubscribe(856640610);
-    //        Unsubscribe(-1582839653);
-    //        if (forbiddenStatus != Guid.Empty)
-    //        {
-    //            forbiddenStatus = selectable.RemoveStatusItem(forbiddenStatus, false);
-    //        }
-    //    }
+        protected override void OnCleanUp()
+        {
+            base.OnCleanUp();
+            Unsubscribe(493375141);
+            Unsubscribe(-2064133523);
+            Unsubscribe(856640610);
+            Unsubscribe(-1582839653);
+            if (forbiddenStatus != Guid.Empty)
+            {
+                forbiddenStatus = selectable.RemoveStatusItem(forbiddenStatus, false);
+            }
+        }
 
-    //    private void OnAbsorb(object data)
-    //    {
-    //        if (data is Pickupable pickupable && pickupable.TryGetComponent<KPrefabID>(out var kprefabID) && kprefabID.HasTag(ForbidItemsPatches.Forbidden) && !prefabID.HasTag(ForbidItemsPatches.Forbidden))
-    //        {
-    //            prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
-    //            Game.Instance.userMenu.Refresh(gameObject);
-    //        }
-    //    }
+        private void OnAbsorb(object data)
+        {
+            if (data is Pickupable pickupable && pickupable.TryGetComponent<KPrefabID>(out var kprefabID) && kprefabID.HasTag(ForbidItemsPatches.Forbidden) && !prefabID.HasTag(ForbidItemsPatches.Forbidden))
+            {
+                prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
+                Game.Instance.userMenu.Refresh(gameObject);
+            }
+        }
 
-    //    private void OnRefreshUserMenu(object _)
-    //    {
-    //        if (!prefabID.HasTag(GameTags.Stored))
-    //        {
-    //            string text;
-    //            string tooltipText;
-    //            System.Action onClick;
-    //            if (prefabID.HasTag(ForbidItemsPatches.Forbidden))
-    //            {
-    //                text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME_OFF;
-    //                tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP_OFF;
-    //                onClick = Reclaim;
-    //            }
-    //            else
-    //            {
-    //                text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME;
-    //                tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP;
-    //                onClick = Forbid;
-    //            }
-    //            Game.Instance.userMenu.AddButton(gameObject, new KIconButtonMenu.ButtonInfo("action_building_disabled", text, onClick, PAction.MaxAction, null, null, null, tooltipText, true), 1f);
-    //        }
-    //    }
+        private void OnRefreshUserMenu(object _)
+        {
+            if (!prefabID.HasTag(GameTags.Stored))
+            {
+                string text;
+                string tooltipText;
+                System.Action onClick;
+                if (prefabID.HasTag(ForbidItemsPatches.Forbidden))
+                {
+                    text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME_OFF;
+                    tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP_OFF;
+                    onClick = Reclaim;
+                }
+                else
+                {
+                    text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME;
+                    tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP;
+                    onClick = Forbid;
+                }
+                Game.Instance.userMenu.AddButton(gameObject, new KIconButtonMenu.ButtonInfo("action_building_disabled", text, onClick, PAction.MaxAction, null, null, null, tooltipText, true), 1f);
+            }
+        }
 
-    //    private void OnStore(object _)
-    //    {
-    //        prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //        prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //    }
+        private void OnStore(object _)
+        {
+            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+        }
 
-    //    private void OnTagsChanged(object data)
-    //    {
-    //        if (data is TagChangedEventData tagChangedEventData)
-    //        {
-    //            if (tagChangedEventData.tag != ForbidItemsPatches.Forbidden)
-    //            {
-    //                return;
-    //            }
-    //        }
-    //        RefreshStatus();
-    //    }
+        private void OnTagsChanged(object data)
+        {
+            if (data is TagChangedEventData tagChangedEventData)
+            {
+                if (tagChangedEventData.tag != ForbidItemsPatches.Forbidden)
+                {
+                    return;
+                }
+            }
+            RefreshStatus();
+        }
 
-    //    internal void RefreshStatus()
-    //    {
-    //        bool flag = prefabID.HasTag(ForbidItemsPatches.Forbidden);
-    //        forbiddenStatus = selectable.ToggleStatusItem(ForbidItemsPatches.ForbiddenStatus, forbiddenStatus, flag, this);
-    //        if (flag && clearable != null && clearable.isClearable)
-    //        {
-    //            clearable.CancelClearing();
-    //        }
-    //    }
-    //}
+        internal void RefreshStatus()
+        {
+            bool flag = prefabID.HasTag(ForbidItemsPatches.Forbidden);
+            forbiddenStatus = selectable.ToggleStatusItem(ForbidItemsPatches.ForbiddenStatus, forbiddenStatus, flag, this);
+            if (flag && clearable != null && clearable.isClearable)
+            {
+                clearable.CancelClearing();
+            }
+        }
+    }
 
-    //public sealed class ForbidItemsPatches
-    //{
-    //    internal static readonly Tag Forbidden = new Tag("Forbidden");
-    //    internal static StatusItem ForbiddenStatus;
+    public sealed class ForbidItemsPatches
+    {
+        internal static readonly Tag Forbidden = new Tag("Forbidden");
+        internal static StatusItem ForbiddenStatus;
 
-    //    [PLibMethod(3U)]
-    //    internal static void AfterDbInit()
-    //    {
-    //        LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.MISC), "STRINGS.");
-    //        LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.UI), "STRINGS.");
-    //        ForbiddenStatus = Db.Get().MiscStatusItems.Add(new StatusItem(Forbidden.Name, "MISC", "status_item_building_disabled", StatusItem.IconType.Custom, NotificationType.Neutral, false, OverlayModes.None.ID, true, 129022, null));
-    //    }
+        [PLibMethod(3U)]
+        internal static void AfterDbInit()
+        {
+            LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.MISC), "STRINGS.");
+            LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.UI), "STRINGS.");
+            ForbiddenStatus = Db.Get().MiscStatusItems.Add(new StatusItem(Forbidden.Name, "MISC", "status_item_building_disabled", StatusItem.IconType.Custom, NotificationType.Neutral, false, OverlayModes.None.ID, true, 129022, null));
+        }
 
-    //    public static void Init(Harmony harmony)
-    //    {
-    //        new PPatchManager(harmony).RegisterPatchClass(typeof(ForbidItemsPatches));
-    //        new PLocalization().Register(null);
-    //    }
+        public static void Init(Harmony harmony)
+        {
+            new PPatchManager(harmony).RegisterPatchClass(typeof(ForbidItemsPatches));
+            new PLocalization().Register(null);
+        }
 
-    //    [HarmonyPatch(typeof(ChoreConsumer), "CanReach")]
-    //    public static class ChoreConsumer_CanReach_Patch
-    //    {
-    //        [HarmonyPriority(200)]
-    //        internal static void Postfix(IApproachable approachable, ref bool __result)
-    //        {
-    //            if (__result && approachable is Pickupable pickupable)
-    //            {
-    //                __result = !pickupable.KPrefabID.HasTag(Forbidden);
-    //            }
-    //        }
-    //    }
+        [HarmonyPatch(typeof(ChoreConsumer), "CanReach")]
+        public static class ChoreConsumer_CanReach_Patch
+        {
+            [HarmonyPriority(200)]
+            internal static void Postfix(IApproachable approachable, ref bool __result)
+            {
+                if (__result && approachable is Pickupable pickupable)
+                {
+                    __result = !pickupable.KPrefabID.HasTag(Forbidden);
+                }
+            }
+        }
 
-    //    [HarmonyPatch(typeof(EntityTemplates), "CreateBaseOreTemplates")]
-    //    public static class EntityTemplates_CreateBaseOreTemplates_Patch
-    //    {
-    //        internal static void Postfix(GameObject ___baseOreTemplate)
-    //        {
-    //            ___baseOreTemplate.AddOrGet<Forbiddable>();
-    //        }
-    //    }
+        [HarmonyPatch(typeof(EntityTemplates), "CreateBaseOreTemplates")]
+        public static class EntityTemplates_CreateBaseOreTemplates_Patch
+        {
+            internal static void Postfix(GameObject ___baseOreTemplate)
+            {
+                ___baseOreTemplate.AddOrGet<Forbiddable>();
+            }
+        }
 
-    //    [HarmonyPatch(typeof(EntityTemplates), "CreateLooseEntity")]
-    //    public static class EntityTemplates_CreateLooseEntity_Patch
-    //    {
-    //        internal static void Postfix(GameObject __result)
-    //        {
-    //            __result.AddOrGet<Forbiddable>();
-    //        }
-    //    }
+        [HarmonyPatch(typeof(EntityTemplates), "CreateLooseEntity")]
+        public static class EntityTemplates_CreateLooseEntity_Patch
+        {
+            internal static void Postfix(GameObject __result)
+            {
+                __result.AddOrGet<Forbiddable>();
+            }
+        }
 
-    //    [HarmonyPatch(typeof(FetchableMonitor.Instance), "IsFetchable")]
-    //    public static class FetchableMonitor_IsFetchable_Patch
-    //    {
-    //        [HarmonyPriority(200)]
-    //        internal static void Postfix(FetchableMonitor.Instance __instance, ref bool __result)
-    //        {
-    //            if (__result)
-    //            {
-    //                __result = !__instance.pickupable.KPrefabID.HasTag(Forbidden);
-    //            }
-    //        }
-    //    }
+        [HarmonyPatch(typeof(FetchableMonitor.Instance), "IsFetchable")]
+        public static class FetchableMonitor_IsFetchable_Patch
+        {
+            [HarmonyPriority(200)]
+            internal static void Postfix(FetchableMonitor.Instance __instance, ref bool __result)
+            {
+                if (__result)
+                {
+                    __result = !__instance.pickupable.KPrefabID.HasTag(Forbidden);
+                }
+            }
+        }
 
-    //    [HarmonyPatch]
-    //    public static class Pickupable_CouldBePickedUpCommonOld_Patch
-    //    {
-    //        internal static MethodBase TargetMethod()
-    //        {
-    //            MethodInfo methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(int) });
-    //            if (methodSafe == null)
-    //            {
-    //                methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(GameObject) });
-    //            }
-    //            return methodSafe;
-    //        }
+        [HarmonyPatch]
+        public static class Pickupable_CouldBePickedUpCommonOld_Patch
+        {
+            internal static MethodBase TargetMethod()
+            {
+                MethodInfo methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(int) });
+                if (methodSafe == null)
+                {
+                    methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(GameObject) });
+                }
+                return methodSafe;
+            }
 
-    //        [HarmonyPriority(200)]
-    //        internal static void Postfix(Pickupable __instance, ref bool __result)
-    //        {
-    //            if (__result)
-    //            {
-    //                __result = !__instance.KPrefabID.HasTag(Forbidden);
-    //            }
-    //        }
-    //    }
-    //}
-    //#endregion
+            [HarmonyPriority(200)]
+            internal static void Postfix(Pickupable __instance, ref bool __result)
+            {
+                if (__result)
+                {
+                    __result = !__instance.KPrefabID.HasTag(Forbidden);
+                }
+            }
+        }
+    }
+    #endregion
 
     //#region Mod: Efficient Supply
     //[JsonObject(Newtonsoft.Json.MemberSerialization.OptIn)]
