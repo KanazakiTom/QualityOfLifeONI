@@ -7,7 +7,7 @@
 //using UnityEngine;
 
 //namespace QualityOfLifeONI
-//{ 
+//{
 //    public static class WhereThisItemFromHelper
 //    {
 //        public static readonly Dictionary<string, string> PrefabToModMap = new Dictionary<string, string>();

@@ -24,6 +24,13 @@ namespace QualityOfLifeONI
         // Centralized config instance
         public static QoLConfig Config;
 
+        // More Priorities
+        public static ChoreGroup RoboPilotChoreGroup;
+        public static ChoreGroup AtmoSuitChoreGroup;
+
+        public static ChoreType SupplyRoboPilotChoreType;
+        public static ChoreType SupplyAtmoSuitChoreType;
+
         public override void OnAllModsLoaded(Harmony harmony, IReadOnlyList<Mod> mods)
         {
             base.OnAllModsLoaded(harmony, mods);
@@ -259,6 +266,13 @@ namespace QualityOfLifeONI
                 // 4. Register Buildings to Plan Menu
                 ModUtil.AddBuildingToPlanScreen("Base", SelfTimerPneumaticDoorConfig.ID);
                 ModUtil.AddBuildingToPlanScreen("Utilities", CryoCondenserConfig.ID);
+
+                // 5. Add more Priorities
+                Strings.Add("STRINGS.DUPLICANTS.CHOREGROUPS.ROBOPILOT.NAME", NEWSTRINGS.NEWDUPLICANTS.NEWCHOREGROUPS.ROBOPILOT.NAME);
+                Strings.Add("STRINGS.DUPLICANTS.CHOREGROUPS.ROBOPILOT.DESC", NEWSTRINGS.NEWDUPLICANTS.NEWCHOREGROUPS.ROBOPILOT.DESC);
+                Strings.Add("STRINGS.DUPLICANTS.CHOREGROUPS.ATMOSUIT.NAME", NEWSTRINGS.NEWDUPLICANTS.NEWCHOREGROUPS.ATMOSUIT.NAME);
+                Strings.Add("STRINGS.DUPLICANTS.CHOREGROUPS.ATMOSUIT.DESC", NEWSTRINGS.NEWDUPLICANTS.NEWCHOREGROUPS.ATMOSUIT.DESC);
+
             }
         }
 

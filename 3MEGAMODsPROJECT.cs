@@ -9,11 +9,13 @@ using System.Runtime.Serialization;
 using System.Threading;
 using Database;
 using HarmonyLib;
+using ImGuiObjectDrawer;
 using JetBrains.Annotations;
 using Klei;
 using Klei.AI;
 using KMod; 
 using KSerialization;
+using Microsoft.CSharp;
 using Newtonsoft.Json;
 using PeterHan.PLib.Actions;
 using PeterHan.PLib.AVC;
@@ -3474,7 +3476,7 @@ namespace QualityOfLifeONI
             {
                 public static class FORBIDDEN
                 {
-                    public static LocString NAME = "Item Forbidden";
+                    public static LocString NAME = "Item Forbidden";    
                     public static LocString TOOLTIP = "This item cannot be picked up by Duplicants or " + STRINGS.UI.PRE_KEYWORD + "Auto-Sweepers" + STRINGS.UI.PST_KEYWORD;
                 }
             }
