@@ -3467,999 +3467,997 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-    //#region Mod: Forbid Items
-    //public static class ForbidItemsStrings
-    //{
-    //    public static class MISC
-    //    {
-    //        public static class STATUSITEMS
-    //        {
-    //            public static class FORBIDDEN
-    //            {
-    //                public static LocString NAME = "Item Forbidden";    
-    //                public static LocString TOOLTIP = "This item cannot be picked up by Duplicants or " + STRINGS.UI.PRE_KEYWORD + "Auto-Sweepers" + STRINGS.UI.PST_KEYWORD;
-    //            }
-    //        }
-    //    }
-
-    //    public static class UI
-    //    {
-    //        public static class USERMENUACTIONS
-    //        {
-    //            public static class FORBIDITEM
-    //            {
-    //                public static LocString NAME = "Forbid Item";
-    //                public static LocString NAME_OFF = "Reclaim Item";
-    //                public static LocString TOOLTIP = "Prevent this item from being picked up";
-    //                public static LocString TOOLTIP_OFF = "Allow this item to be picked up";
-    //            }
-    //        }
-    //    }
-    //}
-
-    //[SerializationConfig(KSerialization.MemberSerialization.OptIn)]
-    //public sealed class Forbiddable : KMonoBehaviour
-    //{
-    //    [MyCmpGet]
-    //    private readonly Clearable clearable;
-
-    //    [MyCmpReq]
-    //    private readonly KPrefabID prefabID;
-
-    //    [MyCmpReq]
-    //    private readonly KSelectable selectable;
-
-    //    private Guid forbiddenStatus;
-
-    //    public void Forbid()
-    //    {
-    //        GameObject gameObject = base.gameObject;
-    //        if (gameObject != null)
-    //        {
-    //            prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
-    //            Game.Instance.userMenu.Refresh(gameObject);
-    //        }
-    //    }
-
-    //    public void Reclaim()
-    //    {
-    //        GameObject gameObject = base.gameObject;
-    //        if (gameObject != null)
-    //        {
-    //            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //            Game.Instance.userMenu.Refresh(gameObject);
-    //        }
-    //    }
-
-    //    protected override void OnSpawn()
-    //    {
-    //        base.OnSpawn();
-    //        Subscribe(-1582839653, OnTagsChanged);
-    //        Subscribe(-2064133523, OnAbsorb);
-    //        Subscribe(856640610, OnStore);
-    //        Subscribe(493375141, OnRefreshUserMenu);
-    //        RefreshStatus();
-    //    }
-
-    //    protected override void OnCleanUp()
-    //    {
-    //        base.OnCleanUp();
-    //        Unsubscribe(493375141);
-    //        Unsubscribe(-2064133523);
-    //        Unsubscribe(856640610);
-    //        Unsubscribe(-1582839653);
-    //        if (forbiddenStatus != Guid.Empty)
-    //        {
-    //            forbiddenStatus = selectable.RemoveStatusItem(forbiddenStatus, false);
-    //        }
-    //    }
-
-    //    private void OnAbsorb(object data)
-    //    {
-    //        if (data is Pickupable pickupable && pickupable.TryGetComponent<KPrefabID>(out var kprefabID) && kprefabID.HasTag(ForbidItemsPatches.Forbidden) && !prefabID.HasTag(ForbidItemsPatches.Forbidden))
-    //        {
-    //            prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
-    //            Game.Instance.userMenu.Refresh(gameObject);
-    //        }
-    //    }
-
-    //    private void OnRefreshUserMenu(object _)
-    //    {
-    //        if (!prefabID.HasTag(GameTags.Stored))
-    //        {
-    //            string text;
-    //            string tooltipText;
-    //            System.Action onClick;
-    //            if (prefabID.HasTag(ForbidItemsPatches.Forbidden))
-    //            {
-    //                text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME_OFF;
-    //                tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP_OFF;
-    //                onClick = Reclaim;
-    //            }
-    //            else
-    //            {
-    //                text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME;
-    //                tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP;
-    //                onClick = Forbid;
-    //            }
-    //            Game.Instance.userMenu.AddButton(gameObject, new KIconButtonMenu.ButtonInfo("action_building_disabled", text, onClick, PAction.MaxAction, null, null, null, tooltipText, true), 1f);
-    //        }
-    //    }
-
-    //    private void OnStore(object _)
-    //    {
-    //        prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //        prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-    //    }
-
-    //    private void OnTagsChanged(object data)
-    //    {
-    //        if (data is TagChangedEventData tagChangedEventData)
-    //        {
-    //            if (tagChangedEventData.tag != ForbidItemsPatches.Forbidden)
-    //            {
-    //                return;
-    //            }
-    //        }
-    //        RefreshStatus();
-    //    }
-
-    //    internal void RefreshStatus()
-    //    {
-    //        bool flag = prefabID.HasTag(ForbidItemsPatches.Forbidden);
-    //        forbiddenStatus = selectable.ToggleStatusItem(ForbidItemsPatches.ForbiddenStatus, forbiddenStatus, flag, this);
-    //        if (flag && clearable != null && clearable.isClearable)
-    //        {
-    //            clearable.CancelClearing();
-    //        }
-    //    }
-    //}
-
-    //public sealed class ForbidItemsPatches
-    //{
-    //    internal static readonly Tag Forbidden = new Tag("Forbidden");
-    //    internal static StatusItem ForbiddenStatus;
-
-    //    [PLibMethod(3U)]
-    //    internal static void AfterDbInit()
-    //    {
-    //        LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.MISC), "STRINGS.");
-    //        LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.UI), "STRINGS.");
-    //        ForbiddenStatus = Db.Get().MiscStatusItems.Add(new StatusItem(Forbidden.Name, "MISC", "status_item_building_disabled", StatusItem.IconType.Custom, NotificationType.Neutral, false, OverlayModes.None.ID, true, 129022, null));
-    //    }
-
-    //    public static void Init(Harmony harmony)
-    //    {
-    //        new PPatchManager(harmony).RegisterPatchClass(typeof(ForbidItemsPatches));
-    //        new PLocalization().Register(null);
-    //    }
-
-    //    [HarmonyPatch(typeof(ChoreConsumer), "CanReach")]
-    //    public static class ChoreConsumer_CanReach_Patch
-    //    {
-    //        [HarmonyPriority(200)]
-    //        internal static void Postfix(IApproachable approachable, ref bool __result)
-    //        {
-    //            if (__result && approachable is Pickupable pickupable)
-    //            {
-    //                __result = !pickupable.KPrefabID.HasTag(Forbidden);
-    //            }
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(EntityTemplates), "CreateBaseOreTemplates")]
-    //    public static class EntityTemplates_CreateBaseOreTemplates_Patch
-    //    {
-    //        internal static void Postfix(GameObject ___baseOreTemplate)
-    //        {
-    //            ___baseOreTemplate.AddOrGet<Forbiddable>();
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(EntityTemplates), "CreateLooseEntity")]
-    //    public static class EntityTemplates_CreateLooseEntity_Patch
-    //    {
-    //        internal static void Postfix(GameObject __result)
-    //        {
-    //            __result.AddOrGet<Forbiddable>();
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(FetchableMonitor.Instance), "IsFetchable")]
-    //    public static class FetchableMonitor_IsFetchable_Patch
-    //    {
-    //        [HarmonyPriority(200)]
-    //        internal static void Postfix(FetchableMonitor.Instance __instance, ref bool __result)
-    //        {
-    //            if (__result)
-    //            {
-    //                __result = !__instance.pickupable.KPrefabID.HasTag(Forbidden);
-    //            }
-    //        }
-    //    }
-
-    //    [HarmonyPatch]
-    //    public static class Pickupable_CouldBePickedUpCommonOld_Patch
-    //    {
-    //        internal static MethodBase TargetMethod()
-    //        {
-    //            MethodInfo methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(int) });
-    //            if (methodSafe == null)
-    //            {
-    //                methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(GameObject) });
-    //            }
-    //            return methodSafe;
-    //        }
-
-    //        [HarmonyPriority(200)]
-    //        internal static void Postfix(Pickupable __instance, ref bool __result)
-    //        {
-    //            if (__result)
-    //            {
-    //                __result = !__instance.KPrefabID.HasTag(Forbidden);
-    //            }
-    //        }
-    //    }
-    //}
-    //#endregion
-
-    //#region Mod: Efficient Supply
-    //[JsonObject(Newtonsoft.Json.MemberSerialization.OptIn)]
-    //public sealed class EfficientFetchOptions
-    //{
-    //    [Option("Minimum Amount (%)", "The minimum percentage of material required to\r\nsupply a chore, unless no other items are available (0-100)", null)]
-    //    [Limit(0.0, 100.0)]
-    //    [JsonProperty]
-    //    public int MinimumAmountPercent { get; set; }
-
-    //    public EfficientFetchOptions()
-    //    {
-    //        MinimumAmountPercent = 25;
-    //    }
-
-    //    public float GetMinimumRatio()
-    //    {
-    //        return ((float)MinimumAmountPercent * 0.01f).InRange(0f, 1f);
-    //    }
-
-    //    public override string ToString()
-    //    {
-    //        return "EfficientFetchOptions[minimumAmount={0}]".F(MinimumAmountPercent);
-    //    }
-    //}
-
-    //internal sealed class EfficientFetchManager : IDisposable
-    //{
-    //    public static EfficientFetchManager Instance { get; private set; }
-
-    //    private readonly ChoreTypes choreTypes;
-    //    private readonly ConcurrentDictionary<Tag, FetchData> outstanding;
-    //    private readonly IList<FetchManager.Pickup> fmPickups;
-    //    private readonly float thresholdFraction;
-
-    //    private EfficientFetchManager(float thresholdFraction)
-    //    {
-    //        if (thresholdFraction.IsNaNOrInfinity())
-    //        {
-    //            throw new ArgumentException(nameof(thresholdFraction));
-    //        }
-    //        choreTypes = Db.Get().ChoreTypes;
-    //        outstanding = new ConcurrentDictionary<Tag, FetchData>(4, 512);
-    //        IList<FetchManager.Pickup> list = null;
-    //        FetchManager fetchManager = Game.Instance.fetchManager;
-    //        try
-    //        {
-    //            FieldInfo fieldSafe = typeof(FetchManager).GetFieldSafe("pickups", false);
-    //            if (fieldSafe != null && fetchManager != null)
-    //            {
-    //                list = fieldSafe.GetValue(fetchManager) as IList<FetchManager.Pickup>;
-    //            }
-    //        }
-    //        catch (FieldAccessException)
-    //        {
-    //        }
-    //        catch (TargetException)
-    //        {
-    //        }
-    //        if (list == null)
-    //        {
-    //            PUtil.LogWarning("Unable to find pickups field on FetchManager!");
-    //        }
-    //        fmPickups = list;
-    //        this.thresholdFraction = thresholdFraction;
-    //    }
-
-    //    public static void CreateInstance(float threshold)
-    //    {
-    //        DestroyInstance();
-    //        Instance = new EfficientFetchManager(threshold);
-    //    }
-
-    //    public static void DestroyInstance()
-    //    {
-    //        EfficientFetchManager instance = Instance;
-    //        instance?.Dispose();
-    //        Instance = null;
-    //    }
-
-    //    public void Dispose()
-    //    {
-    //        outstanding.Clear();
-    //    }
-
-    //    private static void CondensePickups(List<FetchManager.Pickup> pickups)
-    //    {
-    //        int count = pickups.Count;
-    //        FetchManager.Pickup pickup = pickups[0];
-    //        int tagBitsHash = pickup.tagBitsHash;
-    //        int num = count;
-    //        int num2 = 0;
-    //        for (int i = 1; i < count; i++)
-    //        {
-    //            FetchManager.Pickup pickup2 = pickups[i];
-    //            if (pickup.masterPriority == pickup2.masterPriority && pickup2.tagBitsHash == tagBitsHash)
-    //            {
-    //                num--;
-    //            }
-    //            else
-    //            {
-    //                num2++;
-    //                pickup = pickup2;
-    //                tagBitsHash = pickup2.tagBitsHash;
-    //                if (i > num2)
-    //                {
-    //                    pickups[num2] = pickup2;
-    //                }
-    //            }
-    //        }
-    //        pickups.RemoveRange(num, count - num);
-    //    }
-
-    //    private static void GetFetchList(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
-    //    {
-    //        cellCosts.Clear();
-    //        List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
-    //        foreach (FetchManager.Fetchable fetchable in fetch.fetchables.GetDataList())
-    //        {
-    //            Pickupable pickupable = fetchable.pickupable;
-    //            if (pickupable.CouldBePickedUpByMinion(instanceID))
-    //            {
-    //                int cachedCell = pickupable.cachedCell;
-    //                if (!cellCosts.TryGetValue(cachedCell, out int navigationCost))
-    //                {
-    //                    navigationCost = pickupable.GetNavigationCost(navigator, cachedCell);
-    //                    cellCosts.Add(cachedCell, navigationCost);
-    //                }
-    //                if (navigationCost >= 0)
-    //                {
-    //                    finalPickups.Add(new FetchManager.Pickup
-    //                    {
-    //                        pickupable = pickupable,
-    //                        tagBitsHash = fetchable.tagBitsHash,
-    //                        PathCost = (ushort)Math.Min(navigationCost, 65535),
-    //                        masterPriority = fetchable.masterPriority,
-    //                        freshness = fetchable.freshness,
-    //                        foodQuality = fetchable.foodQuality
-    //                    });
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    internal bool FindFetchTarget(FetchChore chore, ChoreConsumerState state, out Pickupable result)
-    //    {
-    //        bool result2 = true;
-    //        if (chore.destination != null && !state.hasSolidTransferArm && fmPickups != null)
-    //        {
-    //            ChoreType choreType = chore.choreType;
-    //            string a = choreType?.Id ?? "";
-    //            if (a != choreTypes.StorageFetch.Id && a != choreTypes.CreatureFetch.Id && a != choreTypes.FoodFetch.Id)
-    //            {
-    //                result = FindFetchTarget(chore);
-    //                result2 = false;
-    //            }
-    //            else
-    //            {
-    //                result = null;
-    //            }
-    //        }
-    //        else
-    //        {
-    //            result = null;
-    //        }
-    //        return result2;
-    //    }
-
-    //    internal Pickupable FindFetchTarget(FetchChore chore)
-    //    {
-    //        Pickupable pickupable = null;
-    //        Storage destination = chore.destination;
-    //        float num = chore.originalAmount * thresholdFraction;
-    //        float num2 = 0f;
-    //        foreach (FetchManager.Pickup pickup in fmPickups)
-    //        {
-    //            Pickupable pickupable2 = pickup.pickupable;
-    //            if (FetchManager.IsFetchablePickup(pickupable2, chore, destination))
-    //            {
-    //                float unreservedAmount = pickupable2.UnreservedAmount;
-    //                if (pickupable == null)
-    //                {
-    //                    pickupable = pickupable2;
-    //                    num2 = unreservedAmount;
-    //                }
-    //                if (unreservedAmount >= num)
-    //                {
-    //                    pickupable = pickupable2;
-    //                    num2 = unreservedAmount;
-    //                    break;
-    //                }
-    //            }
-    //        }
-    //        if (pickupable != null)
-    //        {
-    //            Tag key = pickupable.PrefabID();
-    //            if (outstanding.TryGetValue(key, out var fetchData) && !fetchData.NeedsScan)
-    //            {
-    //                outstanding.TryRemove(key, out _);
-    //            }
-    //            else if (num2 < num && outstanding.TryAdd(key, new FetchData(num)))
-    //            {
-    //                pickupable = null;
-    //            }
-    //        }
-    //        return pickupable;
-    //    }
-
-    //    internal void UpdatePickups(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
-    //    {
-    //        List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
-    //        if (finalPickups != null)
-    //        {
-    //            if (!outstanding.TryGetValue(fetch.prefabId, out var fetchData))
-    //            {
-    //                fetchData = null;
-    //            }
-    //            finalPickups.Clear();
-    //            GetFetchList(fetch, navigator, instanceID, cellCosts);
-    //            if (finalPickups.Count > 1)
-    //            {
-    //                finalPickups.Sort(fetchData ?? FetchData.Default);
-    //                CondensePickups(finalPickups);
-    //            }
-    //            if (fetchData != null)
-    //            {
-    //                fetchData.NeedsScan = false;
-    //            }
-    //        }
-    //    }
-
-    //    internal sealed class FetchData : IComparer<FetchManager.Pickup>
-    //    {
-    //        public static readonly FetchData Default = new FetchData(0f);
-
-    //        public bool NeedsScan { get; set; }
-    //        public float Threshold { get; }
-
-    //        internal FetchData(float threshold)
-    //        {
-    //            Threshold = threshold;
-    //            NeedsScan = true;
-    //        }
-
-    //        public int Compare(FetchManager.Pickup a, FetchManager.Pickup b)
-    //        {
-    //            int num = a.tagBitsHash.CompareTo(b.tagBitsHash);
-    //            if (num != 0)
-    //            {
-    //                return num;
-    //            }
-    //            num = b.masterPriority.CompareTo(a.masterPriority);
-    //            if (num != 0)
-    //            {
-    //                return num;
-    //            }
-    //            float unreservedAmount = a.pickupable.UnreservedAmount;
-    //            float unreservedAmount2 = b.pickupable.UnreservedAmount;
-    //            if (unreservedAmount >= Threshold && unreservedAmount2 < Threshold)
-    //            {
-    //                return -1;
-    //            }
-    //            if (unreservedAmount < Threshold && unreservedAmount2 >= Threshold)
-    //            {
-    //                return 1;
-    //            }
-    //            num = a.PathCost.CompareTo(b.PathCost);
-    //            if (num != 0)
-    //            {
-    //                return num;
-    //            }
-    //            num = b.foodQuality.CompareTo(a.foodQuality);
-    //            if (num == 0)
-    //            {
-    //                return b.freshness.CompareTo(a.freshness);
-    //            }
-    //            return num;
-    //        }
-    //    }
-    //}
-
-    //public sealed class EfficientFetchPatches
-    //{
-    //    private const int ERROR_THRESHOLD = 10;
-    //    private static int errorCount;
-    //    private static EfficientFetchOptions options;
-
-    //    public static void Init(Harmony harmony)
-    //    {
-
-    //        options = new EfficientFetchOptions();
-    //        new PPatchManager(harmony).RegisterPatchClass(typeof(EfficientFetchPatches));
-    //        //new POptions().RegisterOptions(this, typeof(EfficientFetchOptions));
-    //    }
-
-    //    [PLibMethod(6U)]
-    //    internal static void OnEndGame()
-    //    {
-    //        PUtil.LogDebug("Destroying EfficientFetch");
-    //        EfficientFetchManager.DestroyInstance();
-    //    }
-
-    //    [PLibMethod(5U)]
-    //    internal static void OnStartGame()
-    //    {
-    //        options = POptions.ReadSettings<EfficientFetchOptions>() ?? new EfficientFetchOptions();
-    //        PUtil.LogDebug("EfficientFetch starting: Min Ratio={0:D}%".F(options.MinimumAmountPercent));
-    //        EfficientFetchManager.CreateInstance(options.GetMinimumRatio());
-    //    }
-
-    //    [HarmonyPatch(typeof(FetchChore), "FindFetchTarget")]
-    //    public static class FetchChore_FindFetchTarget_Patch
-    //    {
-    //        internal static bool Prefix(FetchChore __instance, ChoreConsumerState consumer_state, ref Pickupable __result)
-    //        {
-    //            EfficientFetchManager instance = EfficientFetchManager.Instance;
-    //            bool result = true;
-    //            if (instance != null && options.MinimumAmountPercent > 0)
-    //            {
-    //                result = instance.FindFetchTarget(__instance, consumer_state, out __result);
-    //            }
-    //            return result;
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(FetchManager.FetchablesByPrefabId), "UpdatePickups")]
-    //    public static class FetchablesByPrefabId_UpdatePickups_Patch
-    //    {
-    //        internal static bool Prefix(FetchManager.FetchablesByPrefabId __instance, Navigator worker_navigator, Dictionary<int, int> ___cellCosts, int worker)
-    //        {
-    //            EfficientFetchManager instance = EfficientFetchManager.Instance;
-    //            bool result = true;
-    //            if (instance != null && options.MinimumAmountPercent > 0)
-    //            {
-    //                try
-    //                {
-    //                    instance.UpdatePickups(__instance, worker_navigator, worker, ___cellCosts);
-    //                    result = false;
-    //                }
-    //                catch (Exception thrown)
-    //                {
-    //                    if (++errorCount < ERROR_THRESHOLD)
-    //                    {
-    //                        PUtil.LogException(thrown);
-    //                    }
-    //                }
-    //            }
-    //            return result;
-    //        }
-    //    }
-    //}
-    //#endregion
-
-    //#region Mod: Rest For The Weary
-    //public static class FinishTasksStrings
-    //{
-    //    public static class DUPLICANTS
-    //    {
-    //        public static class CHORES
-    //        {
-    //            public static class PRECONDITIONS
-    //            {
-    //                public static LocString CAN_START_NEW_TASK = "Schedule disallows new tasks";
-    //            }
-    //        }
-    //    }
-
-    //    public static class UI
-    //    {
-    //        public static class SCHEDULEGROUPS
-    //        {
-    //            public static class FINISHTASK
-    //            {
-    //                public const string ID = "FinishTask";
-    //                public static LocString NAME = "Finish-Up";
-
-    //                public static LocString DESCRIPTION = string.Concat(new string[]
-    //                {
-    //                    "During Finish-Up time shifts my Duplicants will finish their current task if they have one.\n\nThey will return to the ",
-    //                    STRINGS.UI.FormatAsLink("Printing Pod", "HEADQUARTERS"),
-    //                    " or ",
-    //                    STRINGS.UI.PRE_KEYWORD,
-    //                    "Recreation",
-    //                    STRINGS.UI.PST_KEYWORD,
-    //                    " Room once finished."
-    //                });
-
-    //                public static LocString NOTIFICATION_TOOLTIP = string.Concat(new string[]
-    //                {
-    //                    "During ",
-    //                    STRINGS.UI.PRE_KEYWORD,
-    //                    "Finish-Up",
-    //                    STRINGS.UI.PST_KEYWORD,
-    //                    " shifts my Duplicants will finish their current task but will not start new tasks."
-    //                });
-    //            }
-    //        }
-    //    }
-    //}
-
-    //public sealed class FinishChoreDetector : KMonoBehaviour
-    //{
-    //    private bool acquireChore;
-    //    private ChoreDriver driver;
-    //    private Chore allowedChore;
-    //    private string lastGroupID;
-
-    //    public bool IsAcquiringChore => acquireChore;
-
-    //    public Chore TaskToFinish => !acquireChore ? allowedChore : null;
-
-    //    public static string GetScheduleBlock(Schedule schedule)
-    //    {
-    //        string result = "";
-    //        if (schedule != null)
-    //        {
-    //            ScheduleBlock currentScheduleBlock = schedule.GetCurrentScheduleBlock();
-    //            result = currentScheduleBlock?.GroupId ?? "";
-    //        }
-    //        return result;
-    //    }
-
-    //    private void CheckAcquireChore()
-    //    {
-    //        if (acquireChore && driver != null)
-    //        {
-    //            Chore currentChore = driver.GetCurrentChore();
-    //            PriorityScreen.PriorityClass priority_class;
-    //            if (currentChore != null && (priority_class = currentChore.masterPriority.priority_class) > PriorityScreen.PriorityClass.idle && priority_class < PriorityScreen.PriorityClass.personalNeeds)
-    //            {
-    //                acquireChore = false;
-    //                allowedChore = currentChore;
-    //            }
-    //        }
-    //    }
-
-    //    protected override void OnCleanUp()
-    //    {
-    //        Unsubscribe(467134493, OnScheduleChanged);
-    //        Unsubscribe(-894023145, OnScheduleChanged);
-    //        base.OnCleanUp();
-    //    }
-
-    //    private void OnScheduleChanged(object parameter)
-    //    {
-    //        if (driver != null)
-    //        {
-    //            if (parameter is Schedule schedule)
-    //            {
-    //                string scheduleBlock = GetScheduleBlock(schedule);
-    //                string id = FinishTasksPatches.FinishTask.Id;
-    //                if (scheduleBlock == id && lastGroupID != null && lastGroupID != id)
-    //                {
-    //                    acquireChore = true;
-    //                    CheckAcquireChore();
-    //                }
-    //                else if (scheduleBlock != id)
-    //                {
-    //                    allowedChore = null;
-    //                    acquireChore = false;
-    //                }
-    //                lastGroupID = scheduleBlock;
-    //            }
-    //        }
-    //    }
-
-    //    protected override void OnSpawn()
-    //    {
-    //        base.OnSpawn();
-    //        TryGetComponent<ChoreDriver>(out driver);
-    //        Subscribe(-894023145, OnScheduleChanged);
-    //        Subscribe(467134493, OnScheduleChanged);
-    //        lastGroupID = null;
-    //        acquireChore = (lastGroupID == FinishTasksPatches.FinishTask.Id);
-    //        allowedChore = null;
-    //    }
-
-    //    public void Update()
-    //    {
-    //        CheckAcquireChore();
-    //    }
-    //}
-
-    //public sealed class FinishMingleChore : Chore<FinishMingleChore.StatesInstance>, IWorkerPrioritizable
-    //{
-    //    private static readonly Chore.Precondition HAS_MINGLE_CELL = new Chore.Precondition
-    //    {
-    //        id = "PeterHan.FinishTasks.HasMingleCell",
-    //        description = DUPLICANTS.CHORES.PRECONDITIONS.HAS_MINGLE_CELL,
-    //        fn = HasMingleCell
-    //    };
-
-    //    private static bool HasMingleCell(ref Chore.Precondition.Context context, object data)
-    //    {
-    //        bool result = false;
-    //        if (data is FinishMingleChore finishMingleChore)
-    //        {
-    //            int mingleCell = finishMingleChore.smi.GetMingleCell();
-    //            ChoreConsumerState consumerState = context.consumerState;
-    //            Navigator navigator = consumerState?.navigator;
-    //            result = (Grid.IsValidCell(mingleCell) && navigator != null && navigator.GetNavigationCost(mingleCell) >= 0);
-    //        }
-    //        return result;
-    //    }
-
-    //    public FinishMingleChore(IStateMachineTarget target) : base(Db.Get().ChoreTypes.Relax, target, target.GetComponent<ChoreProvider>(), false, null, null, null, PriorityScreen.PriorityClass.idle, 9, false, true, 0, false, ReportManager.ReportType.PersonalTime)
-    //    {
-    //        showAvailabilityInHoverText = false;
-    //        smi = new StatesInstance(this, target.gameObject);
-    //        AddPrecondition(HAS_MINGLE_CELL, this);
-    //        AddPrecondition(ChorePreconditions.instance.IsNotRedAlert, null);
-    //        AddPrecondition(ChorePreconditions.instance.IsScheduledTime, FinishTasksPatches.FinishBlock);
-    //        AddPrecondition(ChorePreconditions.instance.CanDoWorkerPrioritizable, this);
-    //    }
-
-    //    protected override StatusItem GetStatusItem()
-    //    {
-    //        return Db.Get().DuplicantStatusItems.Mingling;
-    //    }
-
-    //    public bool GetWorkerPriority(WorkerBase worker, out int priority)
-    //    {
-    //        priority = RELAXATION.PRIORITY.TIER1;
-    //        return true;
-    //    }
-
-    //    public sealed class States : GameStateMachine<States, StatesInstance, FinishMingleChore>
-    //    {
-    //        public TargetParameter mingler;
-    //        public State mingle;
-    //        public State move;
-
-    //        public override void InitializeStates(out BaseState default_state)
-    //        {
-    //            default_state = move;
-    //            Target(mingler);
-    //            root.EventTransition(GameHashes.ScheduleBlocksChanged, null, smi => !smi.IsFinishTasksTime())
-    //                .Transition(null, smi => !Grid.IsValidCell(smi.GetMingleCell()), UpdateRate.SIM_200ms);
-    //            move.MoveTo(smi => smi.GetMingleCell(), mingle, null, false);
-    //            mingle.ToggleAnims("anim_generic_convo_kanim", 0f).ToggleTag(GameTags.AlwaysConverse).PlayAnim("idle", KAnim.PlayMode.Loop);
-    //        }
-    //    }
-
-    //    public class StatesInstance : GameStateMachine<States, StatesInstance, FinishMingleChore, object>.GameInstance
-    //    {
-    //        private readonly MingleCellSensor mingleCellSensor;
-    //        private readonly Schedulable schedule;
-
-    //        public StatesInstance(FinishMingleChore master, GameObject mingler) : base(master)
-    //        {
-    //            schedule = master.GetComponent<Schedulable>();
-    //            sm.mingler.Set(mingler, smi, false);
-    //            mingleCellSensor = GetComponent<Sensors>().GetSensor<MingleCellSensor>();
-    //        }
-
-    //        public int GetMingleCell()
-    //        {
-    //            int num = mingleCellSensor.GetCell();
-    //            if (!Grid.IsValidCell(num))
-    //            {
-    //                GameObject gameObject = sm.mingler.Get(smi);
-    //                GameObject telepad;
-    //                if (gameObject != null && (telepad = GameUtil.GetTelepad(gameObject.GetMyWorldId())) != null)
-    //                {
-    //                    num = Grid.PosToCell(telepad);
-    //                }
-    //                else
-    //                {
-    //                    num = Grid.InvalidCell;
-    //                }
-    //            }
-    //            return num;
-    //        }
-
-    //        public bool IsFinishTasksTime()
-    //        {
-    //            return schedule.IsAllowed(FinishTasksPatches.FinishBlock);
-    //        }
-    //    }
-    //}
-
-    //public sealed class FinishTasksPatches
-    //{
-    //    public static ScheduleBlockType FinishBlock { get; private set; }
-    //    public static ScheduleGroup FinishTask { get; private set; }
-
-    //    private static ColorStyleSetting FinishColor;
-    //    private static string IsScheduledTimeID;
-    //    private static ScheduleBlockType Work;
-
-    //    private static Chore.Precondition CAN_START_NEW = new Chore.Precondition
-    //    {
-    //        id = "PeterHan.FinishTasks.CanStartNewTask",
-    //        description = FinishTasksStrings.DUPLICANTS.CHORES.PRECONDITIONS.CAN_START_NEW_TASK,
-    //        fn = CheckStartNew
-    //    };
-
-    //    private static bool CheckStartNew(ref Chore.Precondition.Context context, object targetChore)
-    //    {
-    //        ChoreConsumerState consumerState = context.consumerState;
-    //        ChoreDriver choreDriver = consumerState.choreDriver;
-    //        ScheduleBlock scheduleBlock = consumerState.scheduleBlock;
-    //        WorldContainer world = ClusterManager.Instance.GetWorld(choreDriver.GetMyWorldId());
-    //        bool result = true;
-
-    //        if (!world.IsYellowAlert() && !world.IsRedAlert() && scheduleBlock != null && scheduleBlock.GroupId == FinishTask.Id)
-    //        {
-    //            Chore currentChore = choreDriver.GetCurrentChore();
-    //            Chore chore = null;
-    //            if (choreDriver.TryGetComponent<FinishChoreDetector>(out var finishChoreDetector))
-    //            {
-    //                chore = finishChoreDetector.IsAcquiringChore ? currentChore : finishChoreDetector.TaskToFinish;
-    //            }
-    //            result = (currentChore != null && (currentChore == context.chore || currentChore.masterPriority.priority_class == PriorityScreen.PriorityClass.compulsory || chore == context.chore));
-    //        }
-    //        return result;
-    //    }
-
-    //    [PLibPatch(3U, "BaseMinion", RequireType = "BaseMinionConfig", PatchType = HarmonyPatchType.Postfix)]
-    //    internal static void MinionConfig_Postfix(GameObject __result)
-    //    {
-    //        if (__result != null)
-    //        {
-    //            __result.AddOrGet<FinishChoreDetector>();
-    //        }
-    //    }
-
-    //    public static void Init(Harmony harmony)
-    //    {
-    //        FinishBlock = null;
-    //        FinishColor = ScriptableObject.CreateInstance<ColorStyleSetting>();
-    //        FinishColor.activeColor = new Color(0.8f, 0.6f, 1f, 1f);
-    //        FinishColor.inactiveColor = new Color(0.5f, 0.286f, 1f, 1f);
-    //        FinishColor.disabledColor = new Color(0.4f, 0.4f, 0.416f, 1f);
-    //        FinishColor.disabledActiveColor = new Color(0.6f, 0.588f, 0.625f, 1f);
-    //        FinishColor.hoverColor = FinishColor.activeColor;
-    //        FinishColor.disabledhoverColor = new Color(0.48f, 0.46f, 0.5f, 1f);
-    //        FinishTask = null;
-    //        IsScheduledTimeID = string.Empty;
-    //        Work = null;
-    //        PUtil.InitLibrary(true);
-    //        LocString.CreateLocStringKeys(typeof(FinishTasksStrings.DUPLICANTS), "STRINGS.");
-    //        LocString.CreateLocStringKeys(typeof(FinishTasksStrings.UI), "STRINGS.");
-    //        new PPatchManager(harmony).RegisterPatchClass(typeof(FinishTasksPatches));
-    //        new PLocalization().Register(null);
-    //    }
-
-    //    [HarmonyPatch(typeof(StandardChoreBase), "AddPrecondition")]
-    //    public static class StandardChoreBase_AddPrecondition_Patch
-    //    {
-    //        internal static void Postfix(Chore __instance, Chore.Precondition precondition, object data)
-    //        {
-    //            if (precondition.id == IsScheduledTimeID)
-    //            {
-    //                if (data is ScheduleBlockType scheduleBlockType && scheduleBlockType == Work)
-    //                {
-    //                    __instance.AddPrecondition(CAN_START_NEW, __instance);
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(MovePickupableChore), MethodType.Constructor, new Type[]
-    //    {
-    //        typeof(IStateMachineTarget),
-    //        typeof(GameObject),
-    //        typeof(Action<Chore>)
-    //    })]
-    //    public static class MovePickupableChore_AddPrecondition_Patch
-    //    {
-    //        internal static void Postfix(Chore __instance)
-    //        {
-    //            __instance.AddPrecondition(CAN_START_NEW, __instance);
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(MingleMonitor), "InitializeStates")]
-    //    public static class MingleMonitor_InitializeStates_Patch
-    //    {
-    //        private static Chore CreateMingleChore(MingleMonitor.Instance smi)
-    //        {
-    //            return new FinishMingleChore(smi.master);
-    //        }
-
-    //        internal static void Postfix(MingleMonitor __instance)
-    //        {
-    //            __instance.mingle.ToggleRecurringChore(CreateMingleChore, null);
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(ScheduleBlockTypes), MethodType.Constructor, new Type[]
-    //    {
-    //        typeof(ResourceSet)
-    //    })]
-    //    public static class ScheduleBlockTypes_Constructor_Patch
-    //    {
-    //        internal static void Postfix(ScheduleBlockTypes __instance)
-    //        {
-    //            Color color = (FinishColor != null) ? FinishColor.activeColor : Color.green;
-    //            FinishBlock = __instance.Add(new ScheduleBlockType("FinishTask", __instance, FinishTasksStrings.UI.SCHEDULEGROUPS.FINISHTASK.NAME, FinishTasksStrings.UI.SCHEDULEGROUPS.FINISHTASK.DESCRIPTION, color));
-    //            CAN_START_NEW.description = FinishTasksStrings.DUPLICANTS.CHORES.PRECONDITIONS.CAN_START_NEW_TASK;
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(ScheduleGroups), MethodType.Constructor, new Type[]
-    //    {
-    //        typeof(ResourceSet)
-    //    })]
-    //    public static class ScheduleGroups_Constructor_Patch
-    //    {
-    //        internal static void Postfix(ScheduleGroups __instance)
-    //        {
-    //            Work = Db.Get().ScheduleBlockTypes.Work;
-    //            if (Work == null || FinishBlock == null)
-    //            {
-    //                PUtil.LogError("Schedule block types undefined for FinishTask group!");
-    //            }
-    //            else
-    //            {
-    //                FinishTask = __instance.Add("FinishTask", 0, FinishTasksStrings.UI.SCHEDULEGROUPS.FINISHTASK.NAME, FinishTasksStrings.UI.SCHEDULEGROUPS.FINISHTASK.DESCRIPTION, FinishColor.inactiveColor, FinishTasksStrings.UI.SCHEDULEGROUPS.FINISHTASK.NOTIFICATION_TOOLTIP, new List<ScheduleBlockType>
-    //                {
-    //                    Work,
-    //                    FinishBlock
-    //                }, false);
-    //            }
-    //            IsScheduledTimeID = ChorePreconditions.instance.IsScheduledTime.id;
-    //        }
-    //    }
-
-    //    [HarmonyPatch(typeof(ScheduleScreenEntry), "Setup")]
-    //    public static class ScheduleScreenEntry_Setup_Patch
-    //    {
-    //        internal static void Postfix(ScheduleScreenEntry __instance)
-    //        {
-    //            var traverse = Traverse.Create(__instance);
-    //            GameObject paintButtonBathtime = traverse.Field<GameObject>("paintButtonBathtime").Value
-    //                ?? traverse.Field<GameObject>("PaintButtonBathtime").Value;
-
-    //            if (paintButtonBathtime != null && FinishBlock != null)
-    //            {
-    //                GameObject gameObject = Util.KInstantiateUI(paintButtonBathtime, paintButtonBathtime.GetParent(), false);
-    //                if (gameObject.TryGetComponent<MultiToggle>(out var multiToggle))
-    //                {
-    //                    StatePresentationSetting[] additional_display_settings = multiToggle.states[0].additional_display_settings;
-    //                    int num = 0;
-    //                    additional_display_settings[num].color = FinishColor.inactiveColor;
-    //                    additional_display_settings[num].color_on_hover = FinishColor.hoverColor;
-    //                    multiToggle.states[1].additional_display_settings[0].color = FinishColor.inactiveColor;
-    //                }
-    //                gameObject.name = "FinishTask";
-
-    //                var sprite = Def.GetUISprite(Assets.GetPrefab("PropClock"), "ui", false).first;
-    //                traverse.Method("ConfigPaintButton", new object[] { gameObject, FinishTask, sprite }).GetValue();
-    //                __instance.RefreshPaintButtons();
-    //            }
-    //        }
-    //    }
-    //}
-    //#endregion
+    #region Mod: Forbid Items
+    public static class ForbidItemsStrings
+    {
+        public static class MISC
+        {
+            public static class STATUSITEMS
+            {
+                public static class FORBIDDEN
+                {
+                    public static LocString NAME = "Item Forbidden";
+                    public static LocString TOOLTIP = "This item cannot be picked up by Duplicants or " + STRINGS.UI.PRE_KEYWORD + "Auto-Sweepers" + STRINGS.UI.PST_KEYWORD;
+                }
+            }
+        }
+
+        public static class UI
+        {
+            public static class USERMENUACTIONS
+            {
+                public static class FORBIDITEM
+                {
+                    public static LocString NAME = "Forbid Item";
+                    public static LocString NAME_OFF = "Reclaim Item";
+                    public static LocString TOOLTIP = "Prevent this item from being picked up";
+                    public static LocString TOOLTIP_OFF = "Allow this item to be picked up";
+                }
+            }
+        }
+    }
+
+    [SerializationConfig(KSerialization.MemberSerialization.OptIn)]
+    public sealed class Forbiddable : KMonoBehaviour
+    {
+        [MyCmpGet]
+        private readonly Clearable clearable;
+
+        [MyCmpReq]
+        private readonly KPrefabID prefabID;
+
+        [MyCmpReq]
+        private readonly KSelectable selectable;
+
+        private Guid forbiddenStatus;
+
+        public void Forbid()
+        {
+            GameObject gameObject = base.gameObject;
+            if (gameObject != null)
+            {
+                prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
+                Game.Instance.userMenu.Refresh(gameObject);
+            }
+        }
+
+        public void Reclaim()
+        {
+            GameObject gameObject = base.gameObject;
+            if (gameObject != null)
+            {
+                prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+                prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+                Game.Instance.userMenu.Refresh(gameObject);
+            }
+        }
+
+        protected override void OnSpawn()
+        {
+            base.OnSpawn();
+            Subscribe(-1582839653, OnTagsChanged);
+            Subscribe(-2064133523, OnAbsorb);
+            Subscribe(856640610, OnStore);
+            Subscribe(493375141, OnRefreshUserMenu);
+            RefreshStatus();
+        }
+
+        protected override void OnCleanUp()
+        {
+            base.OnCleanUp();
+            Unsubscribe(493375141);
+            Unsubscribe(-2064133523);
+            Unsubscribe(856640610);
+            Unsubscribe(-1582839653);
+            if (forbiddenStatus != Guid.Empty)
+            {
+                forbiddenStatus = selectable.RemoveStatusItem(forbiddenStatus, false);
+            }
+        }
+
+        private void OnAbsorb(object data)
+        {
+            if (data is Pickupable pickupable && pickupable.TryGetComponent<KPrefabID>(out var kprefabID) && kprefabID.HasTag(ForbidItemsPatches.Forbidden) && !prefabID.HasTag(ForbidItemsPatches.Forbidden))
+            {
+                prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
+                Game.Instance.userMenu.Refresh(gameObject);
+            }
+        }
+
+        private void OnRefreshUserMenu(object _)
+        {
+            if (!prefabID.HasTag(GameTags.Stored))
+            {
+                string text;
+                string tooltipText;
+                System.Action onClick;
+                if (prefabID.HasTag(ForbidItemsPatches.Forbidden))
+                {
+                    text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME_OFF;
+                    tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP_OFF;
+                    onClick = Reclaim;
+                }
+                else
+                {
+                    text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME;
+                    tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP;
+                    onClick = Forbid;
+                }
+                Game.Instance.userMenu.AddButton(gameObject, new KIconButtonMenu.ButtonInfo("action_building_disabled", text, onClick, PAction.MaxAction, null, null, null, tooltipText, true), 1f);
+            }
+        }
+
+        private void OnStore(object _)
+        {
+            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+        }
+
+        private void OnTagsChanged(object data)
+        {
+            if (data is TagChangedEventData tagChangedEventData)
+            {
+                if (tagChangedEventData.tag != ForbidItemsPatches.Forbidden)
+                {
+                    return;
+                }
+            }
+            RefreshStatus();
+        }
+
+        internal void RefreshStatus()
+        {
+            bool flag = prefabID.HasTag(ForbidItemsPatches.Forbidden);
+            forbiddenStatus = selectable.ToggleStatusItem(ForbidItemsPatches.ForbiddenStatus, forbiddenStatus, flag, this);
+            if (flag && clearable != null && clearable.isClearable)
+            {
+                clearable.CancelClearing();
+            }
+        }
+    }
+
+    public sealed class ForbidItemsPatches
+    {
+        internal static readonly Tag Forbidden = new Tag("Forbidden");
+        internal static StatusItem ForbiddenStatus;
+
+        [PLibMethod(3U)]
+        internal static void AfterDbInit()
+        {
+            LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.MISC), "STRINGS.");
+            LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.UI), "STRINGS.");
+            ForbiddenStatus = Db.Get().MiscStatusItems.Add(new StatusItem(Forbidden.Name, "MISC", "status_item_building_disabled", StatusItem.IconType.Custom, NotificationType.Neutral, false, OverlayModes.None.ID, true, 129022, null));
+        }
+
+        public static void Init(Harmony harmony)
+        {
+            new PPatchManager(harmony).RegisterPatchClass(typeof(ForbidItemsPatches));
+            new PLocalization().Register(null);
+        }
+
+        [HarmonyPatch(typeof(ChoreConsumer), "CanReach")]
+        public static class ChoreConsumer_CanReach_Patch
+        {
+            [HarmonyPriority(200)]
+            internal static void Postfix(IApproachable approachable, ref bool __result)
+            {
+                if (__result && approachable is Pickupable pickupable)
+                {
+                    __result = !pickupable.KPrefabID.HasTag(Forbidden);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(EntityTemplates), "CreateBaseOreTemplates")]
+        public static class EntityTemplates_CreateBaseOreTemplates_Patch
+        {
+            internal static void Postfix(GameObject ___baseOreTemplate)
+            {
+                ___baseOreTemplate.AddOrGet<Forbiddable>();
+            }
+        }
+
+        [HarmonyPatch(typeof(EntityTemplates), "CreateLooseEntity")]
+        public static class EntityTemplates_CreateLooseEntity_Patch
+        {
+            internal static void Postfix(GameObject __result)
+            {
+                __result.AddOrGet<Forbiddable>();
+            }
+        }
+
+        [HarmonyPatch(typeof(FetchableMonitor.Instance), "IsFetchable")]
+        public static class FetchableMonitor_IsFetchable_Patch
+        {
+            [HarmonyPriority(200)]
+            internal static void Postfix(FetchableMonitor.Instance __instance, ref bool __result)
+            {
+                if (__result)
+                {
+                    __result = !__instance.pickupable.KPrefabID.HasTag(Forbidden);
+                }
+            }
+        }
+
+        [HarmonyPatch]
+        public static class Pickupable_CouldBePickedUpCommonOld_Patch
+        {
+            internal static MethodBase TargetMethod()
+            {
+                MethodInfo methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(int) });
+                if (methodSafe == null)
+                {
+                    methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(GameObject) });
+                }
+                return methodSafe;
+            }
+
+            [HarmonyPriority(200)]
+            internal static void Postfix(Pickupable __instance, ref bool __result)
+            {
+                if (__result)
+                {
+                    __result = !__instance.KPrefabID.HasTag(Forbidden);
+                }
+            }
+        }
+    }
+    #endregion
+
+    #region Mod: Efficient Supply
+    [JsonObject(Newtonsoft.Json.MemberSerialization.OptIn)]
+    public sealed class EfficientFetchOptions
+    {
+        [Option("Minimum Amount (%)", "The minimum percentage of material required to\r\nsupply a chore, unless no other items are available (0-100)", null)]
+        [Limit(0.0, 100.0)]
+        [JsonProperty]
+        public int MinimumAmountPercent { get; set; }
+
+        public EfficientFetchOptions()
+        {
+            MinimumAmountPercent = 25;
+        }
+
+        public float GetMinimumRatio()
+        {
+            return ((float)MinimumAmountPercent * 0.01f).InRange(0f, 1f);
+        }
+
+        public override string ToString()
+        {
+            return "EfficientFetchOptions[minimumAmount={0}]".F(MinimumAmountPercent);
+        }
+    }
+
+    internal sealed class EfficientFetchManager : IDisposable
+    {
+        public static EfficientFetchManager Instance { get; private set; }
+
+        private readonly ChoreTypes choreTypes;
+        private readonly ConcurrentDictionary<Tag, FetchData> outstanding;
+        private readonly IList<FetchManager.Pickup> fmPickups;
+        private readonly float thresholdFraction;
+
+        private EfficientFetchManager(float thresholdFraction)
+        {
+            if (thresholdFraction.IsNaNOrInfinity())
+            {
+                throw new ArgumentException(nameof(thresholdFraction));
+            }
+            choreTypes = Db.Get().ChoreTypes;
+            outstanding = new ConcurrentDictionary<Tag, FetchData>(4, 512);
+            IList<FetchManager.Pickup> list = null;
+            FetchManager fetchManager = Game.Instance.fetchManager;
+            try
+            {
+                FieldInfo fieldSafe = typeof(FetchManager).GetFieldSafe("pickups", false);
+                if (fieldSafe != null && fetchManager != null)
+                {
+                    list = fieldSafe.GetValue(fetchManager) as IList<FetchManager.Pickup>;
+                }
+            }
+            catch (FieldAccessException)
+            {
+            }
+            catch (TargetException)
+            {
+            }
+            if (list == null)
+            {
+                PUtil.LogWarning("Unable to find pickups field on FetchManager!");
+            }
+            fmPickups = list;
+            this.thresholdFraction = thresholdFraction;
+        }
+
+        public static void CreateInstance(float threshold)
+        {
+            DestroyInstance();
+            Instance = new EfficientFetchManager(threshold);
+        }
+
+        public static void DestroyInstance()
+        {
+            EfficientFetchManager instance = Instance;
+            instance?.Dispose();
+            Instance = null;
+        }
+
+        public void Dispose()
+        {
+            outstanding.Clear();
+        }
+
+        private static void CondensePickups(List<FetchManager.Pickup> pickups)
+        {
+            int count = pickups.Count;
+            FetchManager.Pickup pickup = pickups[0];
+            int tagBitsHash = pickup.tagBitsHash;
+            int num = count;
+            int num2 = 0;
+            for (int i = 1; i < count; i++)
+            {
+                FetchManager.Pickup pickup2 = pickups[i];
+                if (pickup.masterPriority == pickup2.masterPriority && pickup2.tagBitsHash == tagBitsHash)
+                {
+                    num--;
+                }
+                else
+                {
+                    num2++;
+                    pickup = pickup2;
+                    tagBitsHash = pickup2.tagBitsHash;
+                    if (i > num2)
+                    {
+                        pickups[num2] = pickup2;
+                    }
+                }
+            }
+            pickups.RemoveRange(num, count - num);
+        }
+
+        private static void GetFetchList(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
+        {
+            cellCosts.Clear();
+            List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
+            foreach (FetchManager.Fetchable fetchable in fetch.fetchables.GetDataList())
+            {
+                Pickupable pickupable = fetchable.pickupable;
+                if (pickupable.CouldBePickedUpByMinion(instanceID))
+                {
+                    int cachedCell = pickupable.cachedCell;
+                    if (!cellCosts.TryGetValue(cachedCell, out int navigationCost))
+                    {
+                        navigationCost = pickupable.GetNavigationCost(navigator, cachedCell);
+                        cellCosts.Add(cachedCell, navigationCost);
+                    }
+                    if (navigationCost >= 0)
+                    {
+                        finalPickups.Add(new FetchManager.Pickup
+                        {
+                            pickupable = pickupable,
+                            tagBitsHash = fetchable.tagBitsHash,
+                            PathCost = (ushort)Math.Min(navigationCost, 65535),
+                            masterPriority = fetchable.masterPriority,
+                            freshness = fetchable.freshness,
+                            foodQuality = fetchable.foodQuality
+                        });
+                    }
+                }
+            }
+        }
+
+        internal bool FindFetchTarget(FetchChore chore, ChoreConsumerState state, out Pickupable result)
+        {
+            bool result2 = true;
+            if (chore.destination != null && !state.hasSolidTransferArm && fmPickups != null)
+            {
+                ChoreType choreType = chore.choreType;
+                string a = choreType?.Id ?? "";
+                if (a != choreTypes.StorageFetch.Id && a != choreTypes.CreatureFetch.Id && a != choreTypes.FoodFetch.Id)
+                {
+                    result = FindFetchTarget(chore);
+                    result2 = false;
+                }
+                else
+                {
+                    result = null;
+                }
+            }
+            else
+            {
+                result = null;
+            }
+            return result2;
+        }
+
+        internal Pickupable FindFetchTarget(FetchChore chore)
+        {
+            Pickupable pickupable = null;
+            Storage destination = chore.destination;
+            float num = chore.originalAmount * thresholdFraction;
+            float num2 = 0f;
+            foreach (FetchManager.Pickup pickup in fmPickups)
+            {
+                Pickupable pickupable2 = pickup.pickupable;
+                if (FetchManager.IsFetchablePickup(pickupable2, chore, destination))
+                {
+                    float unreservedAmount = pickupable2.UnreservedAmount;
+                    if (pickupable == null)
+                    {
+                        pickupable = pickupable2;
+                        num2 = unreservedAmount;
+                    }
+                    if (unreservedAmount >= num)
+                    {
+                        pickupable = pickupable2;
+                        num2 = unreservedAmount;
+                        break;
+                    }
+                }
+            }
+            if (pickupable != null)
+            {
+                Tag key = pickupable.PrefabID();
+                if (outstanding.TryGetValue(key, out var fetchData) && !fetchData.NeedsScan)
+                {
+                    outstanding.TryRemove(key, out _);
+                }
+                else if (num2 < num && outstanding.TryAdd(key, new FetchData(num)))
+                {
+                    pickupable = null;
+                }
+            }
+            return pickupable;
+        }
+
+        internal void UpdatePickups(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
+        {
+            List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
+            if (finalPickups != null)
+            {
+                if (!outstanding.TryGetValue(fetch.prefabId, out var fetchData))
+                {
+                    fetchData = null;
+                }
+                finalPickups.Clear();
+                GetFetchList(fetch, navigator, instanceID, cellCosts);
+                if (finalPickups.Count > 1)
+                {
+                    finalPickups.Sort(fetchData ?? FetchData.Default);
+                    CondensePickups(finalPickups);
+                }
+                if (fetchData != null)
+                {
+                    fetchData.NeedsScan = false;
+                }
+            }
+        }
+
+        internal sealed class FetchData : IComparer<FetchManager.Pickup>
+        {
+            public static readonly FetchData Default = new FetchData(0f);
+
+            public bool NeedsScan { get; set; }
+            public float Threshold { get; }
+
+            internal FetchData(float threshold)
+            {
+                Threshold = threshold;
+                NeedsScan = true;
+            }
+
+            public int Compare(FetchManager.Pickup a, FetchManager.Pickup b)
+            {
+                int num = a.tagBitsHash.CompareTo(b.tagBitsHash);
+                if (num != 0)
+                {
+                    return num;
+                }
+                num = b.masterPriority.CompareTo(a.masterPriority);
+                if (num != 0)
+                {
+                    return num;
+                }
+                float unreservedAmount = a.pickupable.UnreservedAmount;
+                float unreservedAmount2 = b.pickupable.UnreservedAmount;
+                if (unreservedAmount >= Threshold && unreservedAmount2 < Threshold)
+                {
+                    return -1;
+                }
+                if (unreservedAmount < Threshold && unreservedAmount2 >= Threshold)
+                {
+                    return 1;
+                }
+                num = a.PathCost.CompareTo(b.PathCost);
+                if (num != 0)
+                {
+                    return num;
+                }
+                num = b.foodQuality.CompareTo(a.foodQuality);
+                if (num == 0)
+                {
+                    return b.freshness.CompareTo(a.freshness);
+                }
+                return num;
+            }
+        }
+    }
+
+    public sealed class EfficientFetchPatches
+    {
+        private const int ERROR_THRESHOLD = 10;
+        private static int errorCount;
+        private static EfficientFetchOptions options;
+
+        public static void Init(Harmony harmony)
+        {
+            EfficientFetchPatches.options = new EfficientFetchOptions();
+            new PPatchManager(harmony).RegisterPatchClass(typeof(EfficientFetchPatches));
+        }
+
+        [PLibMethod(6U)]
+        internal static void OnEndGame()
+        {
+            PUtil.LogDebug("Destroying EfficientFetch");
+            EfficientFetchManager.DestroyInstance();
+        }
+
+        [PLibMethod(5U)]
+        internal static void OnStartGame()
+        {
+            options = POptions.ReadSettings<EfficientFetchOptions>() ?? new EfficientFetchOptions();
+            PUtil.LogDebug("EfficientFetch starting: Min Ratio={0:D}%".F(options.MinimumAmountPercent));
+            EfficientFetchManager.CreateInstance(options.GetMinimumRatio());
+        }
+
+        [HarmonyPatch(typeof(FetchChore), "FindFetchTarget")]
+        public static class FetchChore_FindFetchTarget_Patch
+        {
+            internal static bool Prefix(FetchChore __instance, ChoreConsumerState consumer_state, ref Pickupable __result)
+            {
+                EfficientFetchManager instance = EfficientFetchManager.Instance;
+                bool result = true;
+                if (instance != null && options.MinimumAmountPercent > 0)
+                {
+                    result = instance.FindFetchTarget(__instance, consumer_state, out __result);
+                }
+                return result;
+            }
+        }
+
+        [HarmonyPatch(typeof(FetchManager.FetchablesByPrefabId), "UpdatePickups")]
+        public static class FetchablesByPrefabId_UpdatePickups_Patch
+        {
+            internal static bool Prefix(FetchManager.FetchablesByPrefabId __instance, Navigator worker_navigator, Dictionary<int, int> ___cellCosts, int worker)
+            {
+                EfficientFetchManager instance = EfficientFetchManager.Instance;
+                bool result = true;
+                if (instance != null && options.MinimumAmountPercent > 0)
+                {
+                    try
+                    {
+                        instance.UpdatePickups(__instance, worker_navigator, worker, ___cellCosts);
+                        result = false;
+                    }
+                    catch (Exception thrown)
+                    {
+                        if (++errorCount < ERROR_THRESHOLD)
+                        {
+                            PUtil.LogException(thrown);
+                        }
+                    }
+                }
+                return result;
+            }
+        }
+    }
+    #endregion
+
+    #region Mod: Rest For The Weary
+    public static class FinishTasksStrings
+    {
+        public static class NEWDUPLICANTS
+        {
+            public static class NEWCHORES
+            {
+                public static class NEWPRECONDITIONS
+                {
+                    public static LocString CAN_START_NEW_TASK = "Schedule disallows new tasks";
+                }
+            }
+        }
+
+        public static class NEWUI
+        {
+            public static class NEWSCHEDULEGROUPS
+            {
+                public static class FINISHTASK
+                {
+                    public const string ID = "FinishTask";
+                    public static LocString NAME = "Finish-Up";
+
+                    public static LocString DESCRIPTION = string.Concat(new string[]
+                    {
+                        "During Finish-Up time shifts my Duplicants will finish their current task if they have one.\n\nThey will return to the ",
+                        STRINGS.UI.FormatAsLink("Printing Pod", "HEADQUARTERS"),
+                        " or ",
+                        STRINGS.UI.PRE_KEYWORD,
+                        "Recreation",
+                        STRINGS.UI.PST_KEYWORD,
+                        " Room once finished."
+                    });
+
+                    public static LocString NOTIFICATION_TOOLTIP = string.Concat(new string[]
+                    {
+                        "During ",
+                        STRINGS.UI.PRE_KEYWORD,
+                        "Finish-Up",
+                        STRINGS.UI.PST_KEYWORD,
+                        " shifts my Duplicants will finish their current task but will not start new tasks."
+                    });
+                }
+            }
+        }
+    }
+
+    public sealed class FinishChoreDetector : KMonoBehaviour
+    {
+        private bool acquireChore;
+        private ChoreDriver driver;
+        private Chore allowedChore;
+        private string lastGroupID;
+
+        public bool IsAcquiringChore => acquireChore;
+
+        public Chore TaskToFinish => !acquireChore ? allowedChore : null;
+
+        public static string GetScheduleBlock(Schedule schedule)
+        {
+            string result = "";
+            if (schedule != null)
+            {
+                ScheduleBlock currentScheduleBlock = schedule.GetCurrentScheduleBlock();
+                result = currentScheduleBlock?.GroupId ?? "";
+            }
+            return result;
+        }
+
+        private void CheckAcquireChore()
+        {
+            if (acquireChore && driver != null)
+            {
+                Chore currentChore = driver.GetCurrentChore();
+                PriorityScreen.PriorityClass priority_class;
+                if (currentChore != null && (priority_class = currentChore.masterPriority.priority_class) > PriorityScreen.PriorityClass.idle && priority_class < PriorityScreen.PriorityClass.personalNeeds)
+                {
+                    acquireChore = false;
+                    allowedChore = currentChore;
+                }
+            }
+        }
+
+        protected override void OnCleanUp()
+        {
+            Unsubscribe(467134493, OnScheduleChanged);
+            Unsubscribe(-894023145, OnScheduleChanged);
+            base.OnCleanUp();
+        }
+
+        private void OnScheduleChanged(object parameter)
+        {
+            if (driver != null)
+            {
+                if (parameter is Schedule schedule)
+                {
+                    string scheduleBlock = GetScheduleBlock(schedule);
+                    string id = FinishTasksPatches.FinishTask.Id;
+                    if (scheduleBlock == id && lastGroupID != null && lastGroupID != id)
+                    {
+                        acquireChore = true;
+                        CheckAcquireChore();
+                    }
+                    else if (scheduleBlock != id)
+                    {
+                        allowedChore = null;
+                        acquireChore = false;
+                    }
+                    lastGroupID = scheduleBlock;
+                }
+            }
+        }
+
+        protected override void OnSpawn()
+        {
+            base.OnSpawn();
+            TryGetComponent<ChoreDriver>(out driver);
+            Subscribe(-894023145, OnScheduleChanged);
+            Subscribe(467134493, OnScheduleChanged);
+            lastGroupID = null;
+            acquireChore = (lastGroupID == FinishTasksPatches.FinishTask.Id);
+            allowedChore = null;
+        }
+
+        public void Update()
+        {
+            CheckAcquireChore();
+        }
+    }
+
+    public sealed class FinishMingleChore : Chore<FinishMingleChore.StatesInstance>, IWorkerPrioritizable
+    {
+        private static readonly Chore.Precondition HAS_MINGLE_CELL = new Chore.Precondition
+        {
+            id = "PeterHan.FinishTasks.HasMingleCell",
+            description = DUPLICANTS.CHORES.PRECONDITIONS.HAS_MINGLE_CELL,
+            fn = HasMingleCell
+        };
+
+        private static bool HasMingleCell(ref Chore.Precondition.Context context, object data)
+        {
+            bool result = false;
+            if (data is FinishMingleChore finishMingleChore)
+            {
+                int mingleCell = finishMingleChore.smi.GetMingleCell();
+                ChoreConsumerState consumerState = context.consumerState;
+                Navigator navigator = consumerState?.navigator;
+                result = (Grid.IsValidCell(mingleCell) && navigator != null && navigator.GetNavigationCost(mingleCell) >= 0);
+            }
+            return result;
+        }
+
+        public FinishMingleChore(IStateMachineTarget target) : base(Db.Get().ChoreTypes.Relax, target, target.GetComponent<ChoreProvider>(), false, null, null, null, PriorityScreen.PriorityClass.idle, 9, false, true, 0, false, ReportManager.ReportType.PersonalTime)
+        {
+            showAvailabilityInHoverText = false;
+            smi = new StatesInstance(this, target.gameObject);
+            AddPrecondition(HAS_MINGLE_CELL, this);
+            AddPrecondition(ChorePreconditions.instance.IsNotRedAlert, null);
+            AddPrecondition(ChorePreconditions.instance.IsScheduledTime, FinishTasksPatches.FinishBlock);
+            AddPrecondition(ChorePreconditions.instance.CanDoWorkerPrioritizable, this);
+        }
+
+        protected override StatusItem GetStatusItem()
+        {
+            return Db.Get().DuplicantStatusItems.Mingling;
+        }
+
+        public bool GetWorkerPriority(WorkerBase worker, out int priority)
+        {
+            priority = RELAXATION.PRIORITY.TIER1;
+            return true;
+        }
+
+        public sealed class States : GameStateMachine<States, StatesInstance, FinishMingleChore>
+        {
+            public TargetParameter mingler;
+            public State mingle;
+            public State move;
+
+            public override void InitializeStates(out BaseState default_state)
+            {
+                default_state = move;
+                Target(mingler);
+                root.EventTransition(GameHashes.ScheduleBlocksChanged, null, smi => !smi.IsFinishTasksTime())
+                    .Transition(null, smi => !Grid.IsValidCell(smi.GetMingleCell()), UpdateRate.SIM_200ms);
+                move.MoveTo(smi => smi.GetMingleCell(), mingle, null, false);
+                mingle.ToggleAnims("anim_generic_convo_kanim", 0f).ToggleTag(GameTags.AlwaysConverse).PlayAnim("idle", KAnim.PlayMode.Loop);
+            }
+        }
+
+        public class StatesInstance : GameStateMachine<States, StatesInstance, FinishMingleChore, object>.GameInstance
+        {
+            private readonly MingleCellSensor mingleCellSensor;
+            private readonly Schedulable schedule;
+
+            public StatesInstance(FinishMingleChore master, GameObject mingler) : base(master)
+            {
+                schedule = master.GetComponent<Schedulable>();
+                sm.mingler.Set(mingler, smi, false);
+                mingleCellSensor = GetComponent<Sensors>().GetSensor<MingleCellSensor>();
+            }
+
+            public int GetMingleCell()
+            {
+                int num = mingleCellSensor.GetCell();
+                if (!Grid.IsValidCell(num))
+                {
+                    GameObject gameObject = sm.mingler.Get(smi);
+                    GameObject telepad;
+                    if (gameObject != null && (telepad = GameUtil.GetTelepad(gameObject.GetMyWorldId())) != null)
+                    {
+                        num = Grid.PosToCell(telepad);
+                    }
+                    else
+                    {
+                        num = Grid.InvalidCell;
+                    }
+                }
+                return num;
+            }
+
+            public bool IsFinishTasksTime()
+            {
+                return schedule.IsAllowed(FinishTasksPatches.FinishBlock);
+            }
+        }
+    }
+
+    public sealed class FinishTasksPatches
+    {
+        public static ScheduleBlockType FinishBlock { get; private set; }
+        public static ScheduleGroup FinishTask { get; private set; }
+
+        private static ColorStyleSetting FinishColor;
+        private static string IsScheduledTimeID;
+        private static ScheduleBlockType Work;
+
+        private static Chore.Precondition CAN_START_NEW = new Chore.Precondition
+        {
+            id = "PeterHan.FinishTasks.CanStartNewTask",
+            description = FinishTasksStrings.NEWDUPLICANTS.NEWCHORES.NEWPRECONDITIONS.CAN_START_NEW_TASK,
+            fn = CheckStartNew
+        };
+
+        private static bool CheckStartNew(ref Chore.Precondition.Context context, object targetChore)
+        {
+            ChoreConsumerState consumerState = context.consumerState;
+            ChoreDriver choreDriver = consumerState.choreDriver;
+            ScheduleBlock scheduleBlock = consumerState.scheduleBlock;
+            WorldContainer world = ClusterManager.Instance.GetWorld(choreDriver.GetMyWorldId());
+            bool result = true;
+
+            if (!world.IsYellowAlert() && !world.IsRedAlert() && scheduleBlock != null && scheduleBlock.GroupId == FinishTask.Id)
+            {
+                Chore currentChore = choreDriver.GetCurrentChore();
+                Chore chore = null;
+                if (choreDriver.TryGetComponent<FinishChoreDetector>(out var finishChoreDetector))
+                {
+                    chore = finishChoreDetector.IsAcquiringChore ? currentChore : finishChoreDetector.TaskToFinish;
+                }
+                result = (currentChore != null && (currentChore == context.chore || currentChore.masterPriority.priority_class == PriorityScreen.PriorityClass.compulsory || chore == context.chore));
+            }
+            return result;
+        }
+
+        [PLibPatch(3U, "BaseMinion", RequireType = "BaseMinionConfig", PatchType = HarmonyPatchType.Postfix)]
+        internal static void MinionConfig_Postfix(GameObject __result)
+        {
+            if (__result != null)
+            {
+                __result.AddOrGet<FinishChoreDetector>();
+            }
+        }
+
+        public static void Init(Harmony harmony)
+        {
+            FinishBlock = null;
+            FinishColor = ScriptableObject.CreateInstance<ColorStyleSetting>();
+            FinishColor.activeColor = new Color(0.8f, 0.6f, 1f, 1f);
+            FinishColor.inactiveColor = new Color(0.5f, 0.286f, 1f, 1f);
+            FinishColor.disabledColor = new Color(0.4f, 0.4f, 0.416f, 1f);
+            FinishColor.disabledActiveColor = new Color(0.6f, 0.588f, 0.625f, 1f);
+            FinishColor.hoverColor = FinishColor.activeColor;
+            FinishColor.disabledhoverColor = new Color(0.48f, 0.46f, 0.5f, 1f);
+            FinishTask = null;
+            IsScheduledTimeID = string.Empty;
+            Work = null;
+            PUtil.InitLibrary(true);
+            LocString.CreateLocStringKeys(typeof(FinishTasksStrings.NEWDUPLICANTS), "STRINGS.");
+            LocString.CreateLocStringKeys(typeof(FinishTasksStrings.NEWUI), "STRINGS.");
+            new PPatchManager(harmony).RegisterPatchClass(typeof(FinishTasksPatches));
+            new PLocalization().Register(null);
+        }
+
+        [HarmonyPatch(typeof(StandardChoreBase), "AddPrecondition")]
+        public static class StandardChoreBase_AddPrecondition_Patch
+        {
+            internal static void Postfix(Chore __instance, Chore.Precondition precondition, object data)
+            {
+                if (precondition.id == IsScheduledTimeID)
+                {
+                    if (data is ScheduleBlockType scheduleBlockType && scheduleBlockType == Work)
+                    {
+                        __instance.AddPrecondition(CAN_START_NEW, __instance);
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(MovePickupableChore), MethodType.Constructor, new Type[]
+        {
+            typeof(IStateMachineTarget),
+            typeof(GameObject),
+            typeof(Action<Chore>)
+        })]
+        public static class MovePickupableChore_AddPrecondition_Patch
+        {
+            internal static void Postfix(Chore __instance)
+            {
+                __instance.AddPrecondition(CAN_START_NEW, __instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(MingleMonitor), "InitializeStates")]
+        public static class MingleMonitor_InitializeStates_Patch
+        {
+            private static Chore CreateMingleChore(MingleMonitor.Instance smi)
+            {
+                return new FinishMingleChore(smi.master);
+            }
+
+            internal static void Postfix(MingleMonitor __instance)
+            {
+                __instance.mingle.ToggleRecurringChore(CreateMingleChore, null);
+            }
+        }
+
+        [HarmonyPatch(typeof(ScheduleBlockTypes), MethodType.Constructor, new Type[]
+        {
+            typeof(ResourceSet)
+        })]
+        public static class ScheduleBlockTypes_Constructor_Patch
+        {
+            internal static void Postfix(ScheduleBlockTypes __instance)
+            {
+                Color color = (FinishColor != null) ? FinishColor.activeColor : Color.green;
+                FinishBlock = __instance.Add(new ScheduleBlockType("FinishTask", __instance, FinishTasksStrings.NEWUI.NEWSCHEDULEGROUPS.FINISHTASK.NAME, FinishTasksStrings.NEWUI.NEWSCHEDULEGROUPS.FINISHTASK.DESCRIPTION, color));
+                CAN_START_NEW.description = FinishTasksStrings.NEWDUPLICANTS.NEWCHORES.NEWPRECONDITIONS.CAN_START_NEW_TASK;
+            }
+        }
+
+        [HarmonyPatch(typeof(ScheduleGroups), MethodType.Constructor, new Type[]
+        {
+            typeof(ResourceSet)
+        })]
+        public static class ScheduleGroups_Constructor_Patch
+        {
+            internal static void Postfix(ScheduleGroups __instance)
+            {
+                Work = Db.Get().ScheduleBlockTypes.Work;
+                if (Work == null || FinishBlock == null)
+                {
+                    PUtil.LogError("Schedule block types undefined for FinishTask group!");
+                }
+                else
+                {
+                    FinishTask = __instance.Add("FinishTask", 0, FinishTasksStrings.NEWUI.NEWSCHEDULEGROUPS.FINISHTASK.NAME, FinishTasksStrings.NEWUI.NEWSCHEDULEGROUPS.FINISHTASK.DESCRIPTION, FinishColor.inactiveColor, FinishTasksStrings.NEWUI.NEWSCHEDULEGROUPS.FINISHTASK.NOTIFICATION_TOOLTIP, new List<ScheduleBlockType>
+                    {
+                        Work,
+                        FinishBlock
+                    }, false);
+                }
+                IsScheduledTimeID = ChorePreconditions.instance.IsScheduledTime.id;
+            }
+        }
+
+        [HarmonyPatch(typeof(ScheduleScreenEntry), "Setup")]
+        public static class ScheduleScreenEntry_Setup_Patch
+        {
+            internal static void Postfix(ScheduleScreenEntry __instance)
+            {
+                var traverse = Traverse.Create(__instance);
+                GameObject paintButtonBathtime = traverse.Field<GameObject>("paintButtonBathtime").Value
+                    ?? traverse.Field<GameObject>("PaintButtonBathtime").Value;
+
+                if (paintButtonBathtime != null && FinishBlock != null)
+                {
+                    GameObject gameObject = Util.KInstantiateUI(paintButtonBathtime, paintButtonBathtime.GetParent(), false);
+                    if (gameObject.TryGetComponent<MultiToggle>(out var multiToggle))
+                    {
+                        StatePresentationSetting[] additional_display_settings = multiToggle.states[0].additional_display_settings;
+                        int num = 0;
+                        additional_display_settings[num].color = FinishColor.inactiveColor;
+                        additional_display_settings[num].color_on_hover = FinishColor.hoverColor;
+                        multiToggle.states[1].additional_display_settings[0].color = FinishColor.inactiveColor;
+                    }
+                    gameObject.name = "FinishTask";
+
+                    var sprite = Def.GetUISprite(Assets.GetPrefab("PropClock"), "ui", false).first;
+                    traverse.Method("ConfigPaintButton", new object[] { gameObject, FinishTask, sprite }).GetValue();
+                    __instance.RefreshPaintButtons();
+                }
+            }
+        }
+    }
+    #endregion
 }
