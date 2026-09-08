@@ -3467,242 +3467,242 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-    #region Mod: Forbid Items
-    public static class ForbidItemsStrings
-    {
-        public static class MISC
-        {
-            public static class STATUSITEMS
-            {
-                public static class FORBIDDEN
-                {
-                    public static LocString NAME = "Item Forbidden";    
-                    public static LocString TOOLTIP = "This item cannot be picked up by Duplicants or " + STRINGS.UI.PRE_KEYWORD + "Auto-Sweepers" + STRINGS.UI.PST_KEYWORD;
-                }
-            }
-        }
+    //#region Mod: Forbid Items
+    //public static class ForbidItemsStrings
+    //{
+    //    public static class MISC
+    //    {
+    //        public static class STATUSITEMS
+    //        {
+    //            public static class FORBIDDEN
+    //            {
+    //                public static LocString NAME = "Item Forbidden";    
+    //                public static LocString TOOLTIP = "This item cannot be picked up by Duplicants or " + STRINGS.UI.PRE_KEYWORD + "Auto-Sweepers" + STRINGS.UI.PST_KEYWORD;
+    //            }
+    //        }
+    //    }
 
-        public static class UI
-        {
-            public static class USERMENUACTIONS
-            {
-                public static class FORBIDITEM
-                {
-                    public static LocString NAME = "Forbid Item";
-                    public static LocString NAME_OFF = "Reclaim Item";
-                    public static LocString TOOLTIP = "Prevent this item from being picked up";
-                    public static LocString TOOLTIP_OFF = "Allow this item to be picked up";
-                }
-            }
-        }
-    }
+    //    public static class UI
+    //    {
+    //        public static class USERMENUACTIONS
+    //        {
+    //            public static class FORBIDITEM
+    //            {
+    //                public static LocString NAME = "Forbid Item";
+    //                public static LocString NAME_OFF = "Reclaim Item";
+    //                public static LocString TOOLTIP = "Prevent this item from being picked up";
+    //                public static LocString TOOLTIP_OFF = "Allow this item to be picked up";
+    //            }
+    //        }
+    //    }
+    //}
 
-    [SerializationConfig(KSerialization.MemberSerialization.OptIn)]
-    public sealed class Forbiddable : KMonoBehaviour
-    {
-        [MyCmpGet]
-        private readonly Clearable clearable;
+    //[SerializationConfig(KSerialization.MemberSerialization.OptIn)]
+    //public sealed class Forbiddable : KMonoBehaviour
+    //{
+    //    [MyCmpGet]
+    //    private readonly Clearable clearable;
 
-        [MyCmpReq]
-        private readonly KPrefabID prefabID;
+    //    [MyCmpReq]
+    //    private readonly KPrefabID prefabID;
 
-        [MyCmpReq]
-        private readonly KSelectable selectable;
+    //    [MyCmpReq]
+    //    private readonly KSelectable selectable;
 
-        private Guid forbiddenStatus;
+    //    private Guid forbiddenStatus;
 
-        public void Forbid()
-        {
-            GameObject gameObject = base.gameObject;
-            if (gameObject != null)
-            {
-                prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
-                Game.Instance.userMenu.Refresh(gameObject);
-            }
-        }
+    //    public void Forbid()
+    //    {
+    //        GameObject gameObject = base.gameObject;
+    //        if (gameObject != null)
+    //        {
+    //            prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
+    //            Game.Instance.userMenu.Refresh(gameObject);
+    //        }
+    //    }
 
-        public void Reclaim()
-        {
-            GameObject gameObject = base.gameObject;
-            if (gameObject != null)
-            {
-                prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-                prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-                Game.Instance.userMenu.Refresh(gameObject);
-            }
-        }
+    //    public void Reclaim()
+    //    {
+    //        GameObject gameObject = base.gameObject;
+    //        if (gameObject != null)
+    //        {
+    //            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+    //            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+    //            Game.Instance.userMenu.Refresh(gameObject);
+    //        }
+    //    }
 
-        protected override void OnSpawn()
-        {
-            base.OnSpawn();
-            Subscribe(-1582839653, OnTagsChanged);
-            Subscribe(-2064133523, OnAbsorb);
-            Subscribe(856640610, OnStore);
-            Subscribe(493375141, OnRefreshUserMenu);
-            RefreshStatus();
-        }
+    //    protected override void OnSpawn()
+    //    {
+    //        base.OnSpawn();
+    //        Subscribe(-1582839653, OnTagsChanged);
+    //        Subscribe(-2064133523, OnAbsorb);
+    //        Subscribe(856640610, OnStore);
+    //        Subscribe(493375141, OnRefreshUserMenu);
+    //        RefreshStatus();
+    //    }
 
-        protected override void OnCleanUp()
-        {
-            base.OnCleanUp();
-            Unsubscribe(493375141);
-            Unsubscribe(-2064133523);
-            Unsubscribe(856640610);
-            Unsubscribe(-1582839653);
-            if (forbiddenStatus != Guid.Empty)
-            {
-                forbiddenStatus = selectable.RemoveStatusItem(forbiddenStatus, false);
-            }
-        }
+    //    protected override void OnCleanUp()
+    //    {
+    //        base.OnCleanUp();
+    //        Unsubscribe(493375141);
+    //        Unsubscribe(-2064133523);
+    //        Unsubscribe(856640610);
+    //        Unsubscribe(-1582839653);
+    //        if (forbiddenStatus != Guid.Empty)
+    //        {
+    //            forbiddenStatus = selectable.RemoveStatusItem(forbiddenStatus, false);
+    //        }
+    //    }
 
-        private void OnAbsorb(object data)
-        {
-            if (data is Pickupable pickupable && pickupable.TryGetComponent<KPrefabID>(out var kprefabID) && kprefabID.HasTag(ForbidItemsPatches.Forbidden) && !prefabID.HasTag(ForbidItemsPatches.Forbidden))
-            {
-                prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
-                Game.Instance.userMenu.Refresh(gameObject);
-            }
-        }
+    //    private void OnAbsorb(object data)
+    //    {
+    //        if (data is Pickupable pickupable && pickupable.TryGetComponent<KPrefabID>(out var kprefabID) && kprefabID.HasTag(ForbidItemsPatches.Forbidden) && !prefabID.HasTag(ForbidItemsPatches.Forbidden))
+    //        {
+    //            prefabID.AddTag(ForbidItemsPatches.Forbidden, true);
+    //            Game.Instance.userMenu.Refresh(gameObject);
+    //        }
+    //    }
 
-        private void OnRefreshUserMenu(object _)
-        {
-            if (!prefabID.HasTag(GameTags.Stored))
-            {
-                string text;
-                string tooltipText;
-                System.Action onClick;
-                if (prefabID.HasTag(ForbidItemsPatches.Forbidden))
-                {
-                    text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME_OFF;
-                    tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP_OFF;
-                    onClick = Reclaim;
-                }
-                else
-                {
-                    text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME;
-                    tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP;
-                    onClick = Forbid;
-                }
-                Game.Instance.userMenu.AddButton(gameObject, new KIconButtonMenu.ButtonInfo("action_building_disabled", text, onClick, PAction.MaxAction, null, null, null, tooltipText, true), 1f);
-            }
-        }
+    //    private void OnRefreshUserMenu(object _)
+    //    {
+    //        if (!prefabID.HasTag(GameTags.Stored))
+    //        {
+    //            string text;
+    //            string tooltipText;
+    //            System.Action onClick;
+    //            if (prefabID.HasTag(ForbidItemsPatches.Forbidden))
+    //            {
+    //                text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME_OFF;
+    //                tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP_OFF;
+    //                onClick = Reclaim;
+    //            }
+    //            else
+    //            {
+    //                text = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.NAME;
+    //                tooltipText = ForbidItemsStrings.UI.USERMENUACTIONS.FORBIDITEM.TOOLTIP;
+    //                onClick = Forbid;
+    //            }
+    //            Game.Instance.userMenu.AddButton(gameObject, new KIconButtonMenu.ButtonInfo("action_building_disabled", text, onClick, PAction.MaxAction, null, null, null, tooltipText, true), 1f);
+    //        }
+    //    }
 
-        private void OnStore(object _)
-        {
-            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-            prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
-        }
+    //    private void OnStore(object _)
+    //    {
+    //        prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+    //        prefabID.RemoveTag(ForbidItemsPatches.Forbidden);
+    //    }
 
-        private void OnTagsChanged(object data)
-        {
-            if (data is TagChangedEventData tagChangedEventData)
-            {
-                if (tagChangedEventData.tag != ForbidItemsPatches.Forbidden)
-                {
-                    return;
-                }
-            }
-            RefreshStatus();
-        }
+    //    private void OnTagsChanged(object data)
+    //    {
+    //        if (data is TagChangedEventData tagChangedEventData)
+    //        {
+    //            if (tagChangedEventData.tag != ForbidItemsPatches.Forbidden)
+    //            {
+    //                return;
+    //            }
+    //        }
+    //        RefreshStatus();
+    //    }
 
-        internal void RefreshStatus()
-        {
-            bool flag = prefabID.HasTag(ForbidItemsPatches.Forbidden);
-            forbiddenStatus = selectable.ToggleStatusItem(ForbidItemsPatches.ForbiddenStatus, forbiddenStatus, flag, this);
-            if (flag && clearable != null && clearable.isClearable)
-            {
-                clearable.CancelClearing();
-            }
-        }
-    }
+    //    internal void RefreshStatus()
+    //    {
+    //        bool flag = prefabID.HasTag(ForbidItemsPatches.Forbidden);
+    //        forbiddenStatus = selectable.ToggleStatusItem(ForbidItemsPatches.ForbiddenStatus, forbiddenStatus, flag, this);
+    //        if (flag && clearable != null && clearable.isClearable)
+    //        {
+    //            clearable.CancelClearing();
+    //        }
+    //    }
+    //}
 
-    public sealed class ForbidItemsPatches
-    {
-        internal static readonly Tag Forbidden = new Tag("Forbidden");
-        internal static StatusItem ForbiddenStatus;
+    //public sealed class ForbidItemsPatches
+    //{
+    //    internal static readonly Tag Forbidden = new Tag("Forbidden");
+    //    internal static StatusItem ForbiddenStatus;
 
-        [PLibMethod(3U)]
-        internal static void AfterDbInit()
-        {
-            LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.MISC), "STRINGS.");
-            LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.UI), "STRINGS.");
-            ForbiddenStatus = Db.Get().MiscStatusItems.Add(new StatusItem(Forbidden.Name, "MISC", "status_item_building_disabled", StatusItem.IconType.Custom, NotificationType.Neutral, false, OverlayModes.None.ID, true, 129022, null));
-        }
+    //    [PLibMethod(3U)]
+    //    internal static void AfterDbInit()
+    //    {
+    //        LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.MISC), "STRINGS.");
+    //        LocString.CreateLocStringKeys(typeof(ForbidItemsStrings.UI), "STRINGS.");
+    //        ForbiddenStatus = Db.Get().MiscStatusItems.Add(new StatusItem(Forbidden.Name, "MISC", "status_item_building_disabled", StatusItem.IconType.Custom, NotificationType.Neutral, false, OverlayModes.None.ID, true, 129022, null));
+    //    }
 
-        public static void Init(Harmony harmony)
-        {
-            new PPatchManager(harmony).RegisterPatchClass(typeof(ForbidItemsPatches));
-            new PLocalization().Register(null);
-        }
+    //    public static void Init(Harmony harmony)
+    //    {
+    //        new PPatchManager(harmony).RegisterPatchClass(typeof(ForbidItemsPatches));
+    //        new PLocalization().Register(null);
+    //    }
 
-        [HarmonyPatch(typeof(ChoreConsumer), "CanReach")]
-        public static class ChoreConsumer_CanReach_Patch
-        {
-            [HarmonyPriority(200)]
-            internal static void Postfix(IApproachable approachable, ref bool __result)
-            {
-                if (__result && approachable is Pickupable pickupable)
-                {
-                    __result = !pickupable.KPrefabID.HasTag(Forbidden);
-                }
-            }
-        }
+    //    [HarmonyPatch(typeof(ChoreConsumer), "CanReach")]
+    //    public static class ChoreConsumer_CanReach_Patch
+    //    {
+    //        [HarmonyPriority(200)]
+    //        internal static void Postfix(IApproachable approachable, ref bool __result)
+    //        {
+    //            if (__result && approachable is Pickupable pickupable)
+    //            {
+    //                __result = !pickupable.KPrefabID.HasTag(Forbidden);
+    //            }
+    //        }
+    //    }
 
-        [HarmonyPatch(typeof(EntityTemplates), "CreateBaseOreTemplates")]
-        public static class EntityTemplates_CreateBaseOreTemplates_Patch
-        {
-            internal static void Postfix(GameObject ___baseOreTemplate)
-            {
-                ___baseOreTemplate.AddOrGet<Forbiddable>();
-            }
-        }
+    //    [HarmonyPatch(typeof(EntityTemplates), "CreateBaseOreTemplates")]
+    //    public static class EntityTemplates_CreateBaseOreTemplates_Patch
+    //    {
+    //        internal static void Postfix(GameObject ___baseOreTemplate)
+    //        {
+    //            ___baseOreTemplate.AddOrGet<Forbiddable>();
+    //        }
+    //    }
 
-        [HarmonyPatch(typeof(EntityTemplates), "CreateLooseEntity")]
-        public static class EntityTemplates_CreateLooseEntity_Patch
-        {
-            internal static void Postfix(GameObject __result)
-            {
-                __result.AddOrGet<Forbiddable>();
-            }
-        }
+    //    [HarmonyPatch(typeof(EntityTemplates), "CreateLooseEntity")]
+    //    public static class EntityTemplates_CreateLooseEntity_Patch
+    //    {
+    //        internal static void Postfix(GameObject __result)
+    //        {
+    //            __result.AddOrGet<Forbiddable>();
+    //        }
+    //    }
 
-        [HarmonyPatch(typeof(FetchableMonitor.Instance), "IsFetchable")]
-        public static class FetchableMonitor_IsFetchable_Patch
-        {
-            [HarmonyPriority(200)]
-            internal static void Postfix(FetchableMonitor.Instance __instance, ref bool __result)
-            {
-                if (__result)
-                {
-                    __result = !__instance.pickupable.KPrefabID.HasTag(Forbidden);
-                }
-            }
-        }
+    //    [HarmonyPatch(typeof(FetchableMonitor.Instance), "IsFetchable")]
+    //    public static class FetchableMonitor_IsFetchable_Patch
+    //    {
+    //        [HarmonyPriority(200)]
+    //        internal static void Postfix(FetchableMonitor.Instance __instance, ref bool __result)
+    //        {
+    //            if (__result)
+    //            {
+    //                __result = !__instance.pickupable.KPrefabID.HasTag(Forbidden);
+    //            }
+    //        }
+    //    }
 
-        [HarmonyPatch]
-        public static class Pickupable_CouldBePickedUpCommonOld_Patch
-        {
-            internal static MethodBase TargetMethod()
-            {
-                MethodInfo methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(int) });
-                if (methodSafe == null)
-                {
-                    methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(GameObject) });
-                }
-                return methodSafe;
-            }
+    //    [HarmonyPatch]
+    //    public static class Pickupable_CouldBePickedUpCommonOld_Patch
+    //    {
+    //        internal static MethodBase TargetMethod()
+    //        {
+    //            MethodInfo methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(int) });
+    //            if (methodSafe == null)
+    //            {
+    //                methodSafe = typeof(Pickupable).GetMethodSafe("CouldBePickedUpCommon", false, new Type[] { typeof(GameObject) });
+    //            }
+    //            return methodSafe;
+    //        }
 
-            [HarmonyPriority(200)]
-            internal static void Postfix(Pickupable __instance, ref bool __result)
-            {
-                if (__result)
-                {
-                    __result = !__instance.KPrefabID.HasTag(Forbidden);
-                }
-            }
-        }
-    }
-    #endregion
+    //        [HarmonyPriority(200)]
+    //        internal static void Postfix(Pickupable __instance, ref bool __result)
+    //        {
+    //            if (__result)
+    //            {
+    //                __result = !__instance.KPrefabID.HasTag(Forbidden);
+    //            }
+    //        }
+    //    }
+    //}
+    //#endregion
 
     //#region Mod: Efficient Supply
     //[JsonObject(Newtonsoft.Json.MemberSerialization.OptIn)]

@@ -44,10 +44,33 @@ namespace QualityOfLifeONI
             // 1. MUST BE FIRST: Initialize PLib core before calling any PLib methods
             PUtil.InitLibrary();
 
+            #region WhereThisItemFrom
+            harmony.PatchAll();
+            // Safely apply our version-safe building descriptor patch manually
+            try
+            {
+                var targetMethod = WhereThisItemFrom_BuildingDef_Patch.TargetMethod();
+                if (targetMethod != null)
+                {
+                    var postfixMethod = AccessTools.Method(typeof(WhereThisItemFrom_BuildingDef_Patch), nameof(WhereThisItemFrom_BuildingDef_Patch.Postfix));
+                    harmony.Patch(targetMethod, postfix: new HarmonyMethod(postfixMethod));
+                    Debug.Log("[QualityOfLifeONI] WhereThisItemFrom_BuildingDef_Patch applied successfully.");
+                }
+                else
+                {
+                    Debug.LogWarning("[QualityOfLifeONI] Target method for WhereThisItemFrom_BuildingDef_Patch could not be found on this game version. Skipping patch safely.");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[QualityOfLifeONI] Failed to apply WhereThisItemFrom_BuildingDef_Patch manually: " + e.Message);
+            }
+            #endregion
+
             // 2. Safely initialize PLib patch manager and actions
             PipPlantOverlayPatches.Init(harmony);
             NoWasteWantPatches.Init(harmony);
-            ForbidItemsPatches.Init(harmony);
+            //ForbidItemsPatches.Init(harmony);
             //EfficientFetchPatches.Init(harmony);
             //FinishTasksPatches.Init(harmony);
 
