@@ -51,6 +51,7 @@ namespace QualityOfLifeONI
             ForbidItemsPatches.Init(harmony);
             EfficientFetchPatches.Init(harmony);
             FinishTasksPatches.Init(harmony);
+            ThermalTooltipPatches.Init(harmony);
 
             // 3. Other initializations
             MopTool.maxMopAmt = float.PositiveInfinity;
@@ -58,8 +59,8 @@ namespace QualityOfLifeONI
             base.OnLoad(harmony);
 
             new POptions().RegisterOptions(this, typeof(QoLConfig));
-            new POptions().RegisterOptions(this, typeof(EfficientFetchOptions));
             new PVersionCheck().Register(this, new SteamVersionChecker());
+
             Config = POptions.ReadSettings<QoLConfig>() ?? new QoLConfig();
 
             Console.WriteLine($"Mod <{Name}> loaded: {Version}");
@@ -68,7 +69,7 @@ namespace QualityOfLifeONI
         // CaiLib's Config Managers
         //internal static ConfigManager<CaiLibConfig> ConfigManager;
 
-        // Hatches Don't Eat Meat
+        // Hatches Don't Eat Meat Postfix
         private static void Postfix(ref List<Diet.Info> __result)
         {
             for (int i = 0; i < __result.Count; i++)
@@ -80,160 +81,6 @@ namespace QualityOfLifeONI
                 }
             }
         }
-
-//#region Sanchozz Region
-//        // --- Sanchozz's Mods
-//        private static void PatchLater()
-//        {
-//            Utils.MuteMouthFlapSpeech("anim_rage_kanim", ModInit.rage_anims);
-//            ModInit.@this.PatchLater();
-//        }
-
-//        public static void AddSackSymbolOverride(GameObject dupe, GameObject pickupable)
-//        {
-//            KAnimControllerBase kanimControllerBase;
-//            SymbolOverrideController symbolOverrideController;
-//            if (dupe != null && pickupable != null && pickupable.HasTag(GameTags.Creature) && !pickupable.HasTag(GameTags.Robot) && dupe.TryGetComponent<KAnimControllerBase>(out kanimControllerBase) && dupe.TryGetComponent<SymbolOverrideController>(out symbolOverrideController))
-//            {
-//                KAnim.Build.Symbol symbol = Assets.GetAnim("creature_sack_kanim").GetData().build.GetSymbol("object");
-//                symbolOverrideController.AddSymbolOverride("snapTo_chest", symbol, 0);
-//                kanimControllerBase.SetSymbolVisiblity("snapTo_chest", true);
-//            }
-//        }
-//        public static void RemoveSackSymbolOverride(GameObject dupe)
-//        {
-//            KAnimControllerBase kanimControllerBase;
-//            SymbolOverrideController symbolOverrideController;
-//            if (dupe != null && dupe.TryGetComponent<KAnimControllerBase>(out kanimControllerBase) && dupe.TryGetComponent<SymbolOverrideController>(out symbolOverrideController))
-//            {
-//                kanimControllerBase.SetSymbolVisiblity("snapTo_chest", false);
-//                symbolOverrideController.RemoveSymbolOverride("snapTo_chest", 0);
-//            }
-//        }
-
-//        public static bool IsCritter(GameObject go)
-//        {
-//            CreatureBrain creatureBrain;
-//            return go != null && go.TryGetComponent<CreatureBrain>(out creatureBrain) && !go.HasTag(GameTags.Robot);
-//        }
-
-//        private static ModInit @this;
-
-//        private const string rage_kanim = "anim_rage_kanim";
-
-//        public static readonly HashedString[] rage_anims = new HashedString[]
-//        {
-//            "idle_pre",
-//            "rage_pre",
-//            "rage_loop",
-//            "rage_loop",
-//            "rage_pst",
-//            "idle_pst"
-//        };
-
-//        private const string chest = "snapTo_chest";
-
-//        [HarmonyPatch(typeof(ChoreTypes), "Add")]
-//        public static class ChoreTypes_Add
-//        {
-//            private static void Prefix(string id, ref bool skip_implicit_priority_change)
-//            {
-//                if (id == "CreatureFetch")
-//                {
-//                    skip_implicit_priority_change = true;
-//                }
-//            }
-//        }
-
-//        [HarmonyPatch]
-//        public static class Capturable_OnWork
-//        {
-//            private static IEnumerable<MethodBase> TargetMethods()
-//            {
-//                yield return typeof(Capturable).GetMethod("OnStartWork", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-//                yield return typeof(Capturable).GetMethod("OnStopWork", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-//                yield break;
-//            }
-
-//            private static void Postfix(Capturable __instance)
-//            {
-//                CreatureBrain creatureBrain;
-//                if (__instance.TryGetComponent<CreatureBrain>(out creatureBrain) && creatureBrain.IsRunning())
-//                {
-//                    creatureBrain.UpdateBrain();
-//                }
-//            }
-//        }
-
-//        [HarmonyPatch(typeof(Capturable), "OnCompleteWork")]
-//        public static class Capturable_OnCompleteWork
-//        {
-//            private static void Postfix(Capturable __instance, WorkerBase worker)
-//            {
-//                Pickupable pickupable;
-//                if (__instance.TryGetComponent<Pickupable>(out pickupable) && pickupable.IsReachable())
-//                {
-//                    return;
-//                }
-//                ChoreProvider target;
-//                if (worker != null && worker.TryGetComponent<ChoreProvider>(out target))
-//                {
-//                    new EmoteChore(target, Db.Get().ChoreTypes.EmoteHighPriority, "anim_rage_kanim", ModInit.rage_anims, null);
-//                }
-//            }
-//        }
-
-//        [HarmonyPatch(typeof(FetchAreaChore.States), "InitializeStates")]
-//        public static class FetchAreaChore_States_InitializeStates
-//        {
-//            private static void Postfix(FetchAreaChore.States __instance)
-//            {
-//                __instance.delivering.movetostorage.Enter(delegate (FetchAreaChore.StatesInstance smi)
-//                {
-//                    ModInit.AddSackSymbolOverride(smi.gameObject, smi.sm.deliveryObject.Get(smi));
-//                }).Exit(delegate (FetchAreaChore.StatesInstance smi)
-//                {
-//                    ModInit.RemoveSackSymbolOverride(smi.gameObject);
-//                });
-//            }
-//        }
-
-//        [HarmonyPatch(typeof(MovePickupableChore.States), "InitializeStates")]
-//        public static class MovePickupableChore_States_InitializeStates
-//        {
-//            private static void Postfix(MovePickupableChore.States __instance)
-//            {
-//                __instance.approachstorage.Enter(delegate (MovePickupableChore.StatesInstance smi)
-//                {
-//                    ModInit.AddSackSymbolOverride(smi.sm.deliverer.Get(smi), smi.sm.pickupablesource.Get(smi));
-//                }).Exit(delegate (MovePickupableChore.StatesInstance smi)
-//                {
-//                    ModInit.RemoveSackSymbolOverride(smi.sm.deliverer.Get(smi));
-//                });
-//            }
-//        }
-
-//        [HarmonyPatch(typeof(MovePickupableChore.States), "IsDeliveryComplete")]
-//        public static class MovePickupableChore_States_IsDeliveryComplete
-//        {
-//            private static void Postfix(ref bool __result, MovePickupableChore.StatesInstance smi)
-//            {
-//                if (!__result)
-//                {
-//                    GameObject gameObject = smi.sm.deliverypoint.Get(smi);
-//                    CancellableMove cancellableMove;
-//                    if (gameObject != null && gameObject.TryGetComponent<CancellableMove>(out cancellableMove))
-//                    {
-//                        GameObject nextTarget = cancellableMove.GetNextTarget();
-//                        if (nextTarget != null && ModInit.IsCritter(nextTarget) == (smi.master.choreType.IdHash == Db.Get().ChoreTypes.Fetch.IdHash))
-//                        {
-//                            __result = true;
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        #endregion
 
         // --- CENTRAL STRINGS AND BUILDINGS REGISTRY ---
         
@@ -289,7 +136,7 @@ namespace QualityOfLifeONI
             }
         }
 
-        // --- CRYO CONSENDER TECH ---
+        /// --- CRYO CONDENSER TECH ---
         [HarmonyPatch(typeof(Database.Techs), "Init")]
         public static class Techs_Init_Patch
         {
@@ -297,13 +144,12 @@ namespace QualityOfLifeONI
             {
                 Tech tech = null;
 
-                if (PlayerConfig.Instance?.Difficulty == TechDifficulty.Hard)
+                if (ModInit.Config?.CryoCondenser_Difficulty == TechDifficulty.Hard)
                 {
-                    // DLC: CryoFuelPropulsion | Base Game: HydrogenEngine
                     string[] hardTechCandidates = new string[]
                     {
-                        "CryoFuelPropulsion",
-                        "HydrogenEngine"
+                "CryoFuelPropulsion",
+                "HydrogenEngine"
                     };
 
                     foreach (string techId in hardTechCandidates)
@@ -313,15 +159,167 @@ namespace QualityOfLifeONI
                     }
                 }
 
-                // Fallback to Easy Mode (LiquidTemperature / Aquatuner) if not set or found
                 if (tech == null)
                 {
                     tech = __instance.TryGet("LiquidTemperature");
                 }
 
-                // Add building to the resolved tech node
                 tech?.unlockedItemIDs.Add(CryoCondenserConfig.ID);
             }
         }
+
+        //#region Sanchozz Region
+        //        // --- Sanchozz's Mods
+        //        private static void PatchLater()
+        //        {
+        //            Utils.MuteMouthFlapSpeech("anim_rage_kanim", ModInit.rage_anims);
+        //            ModInit.@this.PatchLater();
+        //        }
+
+        //        public static void AddSackSymbolOverride(GameObject dupe, GameObject pickupable)
+        //        {
+        //            KAnimControllerBase kanimControllerBase;
+        //            SymbolOverrideController symbolOverrideController;
+        //            if (dupe != null && pickupable != null && pickupable.HasTag(GameTags.Creature) && !pickupable.HasTag(GameTags.Robot) && dupe.TryGetComponent<KAnimControllerBase>(out kanimControllerBase) && dupe.TryGetComponent<SymbolOverrideController>(out symbolOverrideController))
+        //            {
+        //                KAnim.Build.Symbol symbol = Assets.GetAnim("creature_sack_kanim").GetData().build.GetSymbol("object");
+        //                symbolOverrideController.AddSymbolOverride("snapTo_chest", symbol, 0);
+        //                kanimControllerBase.SetSymbolVisiblity("snapTo_chest", true);
+        //            }
+        //        }
+        //        public static void RemoveSackSymbolOverride(GameObject dupe)
+        //        {
+        //            KAnimControllerBase kanimControllerBase;
+        //            SymbolOverrideController symbolOverrideController;
+        //            if (dupe != null && dupe.TryGetComponent<KAnimControllerBase>(out kanimControllerBase) && dupe.TryGetComponent<SymbolOverrideController>(out symbolOverrideController))
+        //            {
+        //                kanimControllerBase.SetSymbolVisiblity("snapTo_chest", false);
+        //                symbolOverrideController.RemoveSymbolOverride("snapTo_chest", 0);
+        //            }
+        //        }
+
+        //        public static bool IsCritter(GameObject go)
+        //        {
+        //            CreatureBrain creatureBrain;
+        //            return go != null && go.TryGetComponent<CreatureBrain>(out creatureBrain) && !go.HasTag(GameTags.Robot);
+        //        }
+
+        //        private static ModInit @this;
+
+        //        private const string rage_kanim = "anim_rage_kanim";
+
+        //        public static readonly HashedString[] rage_anims = new HashedString[]
+        //        {
+        //            "idle_pre",
+        //            "rage_pre",
+        //            "rage_loop",
+        //            "rage_loop",
+        //            "rage_pst",
+        //            "idle_pst"
+        //        };
+
+        //        private const string chest = "snapTo_chest";
+
+        //        [HarmonyPatch(typeof(ChoreTypes), "Add")]
+        //        public static class ChoreTypes_Add
+        //        {
+        //            private static void Prefix(string id, ref bool skip_implicit_priority_change)
+        //            {
+        //                if (id == "CreatureFetch")
+        //                {
+        //                    skip_implicit_priority_change = true;
+        //                }
+        //            }
+        //        }
+
+        //        [HarmonyPatch]
+        //        public static class Capturable_OnWork
+        //        {
+        //            private static IEnumerable<MethodBase> TargetMethods()
+        //            {
+        //                yield return typeof(Capturable).GetMethod("OnStartWork", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        //                yield return typeof(Capturable).GetMethod("OnStopWork", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        //                yield break;
+        //            }
+
+        //            private static void Postfix(Capturable __instance)
+        //            {
+        //                CreatureBrain creatureBrain;
+        //                if (__instance.TryGetComponent<CreatureBrain>(out creatureBrain) && creatureBrain.IsRunning())
+        //                {
+        //                    creatureBrain.UpdateBrain();
+        //                }
+        //            }
+        //        }
+
+        //        [HarmonyPatch(typeof(Capturable), "OnCompleteWork")]
+        //        public static class Capturable_OnCompleteWork
+        //        {
+        //            private static void Postfix(Capturable __instance, WorkerBase worker)
+        //            {
+        //                Pickupable pickupable;
+        //                if (__instance.TryGetComponent<Pickupable>(out pickupable) && pickupable.IsReachable())
+        //                {
+        //                    return;
+        //                }
+        //                ChoreProvider target;
+        //                if (worker != null && worker.TryGetComponent<ChoreProvider>(out target))
+        //                {
+        //                    new EmoteChore(target, Db.Get().ChoreTypes.EmoteHighPriority, "anim_rage_kanim", ModInit.rage_anims, null);
+        //                }
+        //            }
+        //        }
+
+        //        [HarmonyPatch(typeof(FetchAreaChore.States), "InitializeStates")]
+        //        public static class FetchAreaChore_States_InitializeStates
+        //        {
+        //            private static void Postfix(FetchAreaChore.States __instance)
+        //            {
+        //                __instance.delivering.movetostorage.Enter(delegate (FetchAreaChore.StatesInstance smi)
+        //                {
+        //                    ModInit.AddSackSymbolOverride(smi.gameObject, smi.sm.deliveryObject.Get(smi));
+        //                }).Exit(delegate (FetchAreaChore.StatesInstance smi)
+        //                {
+        //                    ModInit.RemoveSackSymbolOverride(smi.gameObject);
+        //                });
+        //            }
+        //        }
+
+        //        [HarmonyPatch(typeof(MovePickupableChore.States), "InitializeStates")]
+        //        public static class MovePickupableChore_States_InitializeStates
+        //        {
+        //            private static void Postfix(MovePickupableChore.States __instance)
+        //            {
+        //                __instance.approachstorage.Enter(delegate (MovePickupableChore.StatesInstance smi)
+        //                {
+        //                    ModInit.AddSackSymbolOverride(smi.sm.deliverer.Get(smi), smi.sm.pickupablesource.Get(smi));
+        //                }).Exit(delegate (MovePickupableChore.StatesInstance smi)
+        //                {
+        //                    ModInit.RemoveSackSymbolOverride(smi.sm.deliverer.Get(smi));
+        //                });
+        //            }
+        //        }
+
+        //        [HarmonyPatch(typeof(MovePickupableChore.States), "IsDeliveryComplete")]
+        //        public static class MovePickupableChore_States_IsDeliveryComplete
+        //        {
+        //            private static void Postfix(ref bool __result, MovePickupableChore.StatesInstance smi)
+        //            {
+        //                if (!__result)
+        //                {
+        //                    GameObject gameObject = smi.sm.deliverypoint.Get(smi);
+        //                    CancellableMove cancellableMove;
+        //                    if (gameObject != null && gameObject.TryGetComponent<CancellableMove>(out cancellableMove))
+        //                    {
+        //                        GameObject nextTarget = cancellableMove.GetNextTarget();
+        //                        if (nextTarget != null && ModInit.IsCritter(nextTarget) == (smi.master.choreType.IdHash == Db.Get().ChoreTypes.Fetch.IdHash))
+        //                        {
+        //                            __result = true;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        #endregion
     }
 }

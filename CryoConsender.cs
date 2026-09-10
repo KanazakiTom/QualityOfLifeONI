@@ -16,8 +16,8 @@ namespace QualityOfLifeONI
         [MyCmpReq]
         private readonly EnergyConsumer energyConsumer;
 
-        private const float BASE_BATCH_MASS_KG = 10f; // 10 kg/tick in Classic Mode
-        private const float HIGH_WATER_MARK_KG = 100f; // Wait until 100 kg accumulated to start
+        private const float BASE_BATCH_MASS_KG = 10f;
+        private const float HIGH_WATER_MARK_KG = 100f;
 
         [Serialize]
         private bool isBufferingFull = false;
@@ -29,8 +29,7 @@ namespace QualityOfLifeONI
         {
             base.OnSpawn();
 
-            // If Turbo Mode setting is turned off in config, force reset active turbo mode
-            if (!(PlayerConfig.Instance?.EnableTurboMode ?? false))
+            if (!(ModInit.Config?.CryoCondenser_EnableTurboMode ?? false))
             {
                 isTurboMode = false;
             }
@@ -40,9 +39,8 @@ namespace QualityOfLifeONI
 
         private void UpdatePowerConsumption()
         {
-            float basePower = PlayerConfig.Instance?.PowerConsumption ?? 2400f;
-            // Turbo mode consumes 4x energy if enabled and active
-            bool turboEnabled = PlayerConfig.Instance?.EnableTurboMode ?? false;
+            float basePower = ModInit.Config?.CryoCondenser_PowerConsumption ?? 2400f;
+            bool turboEnabled = ModInit.Config?.CryoCondenser_EnableTurboMode ?? false;
             float currentRequirement = (isTurboMode && turboEnabled) ? basePower * 4f : basePower;
 
             if (energyConsumer != null)
@@ -80,7 +78,7 @@ namespace QualityOfLifeONI
                 }
             }
 
-            // 2. Buffer State Logic (Hysteresis)
+            // 2. Buffer State Logic
             if (!isBufferingFull)
             {
                 if (totalAllGasMass >= HIGH_WATER_MARK_KG)
@@ -94,8 +92,7 @@ namespace QualityOfLifeONI
                 }
             }
 
-            // Target batch mass based on selected mode (10 kg vs 40 kg)
-            bool turboEnabled = PlayerConfig.Instance?.EnableTurboMode ?? false;
+            bool turboEnabled = ModInit.Config?.CryoCondenser_EnableTurboMode ?? false;
             float batchMass = (isTurboMode && turboEnabled) ? BASE_BATCH_MASS_KG * 4f : BASE_BATCH_MASS_KG;
 
             // 3. Find target element
@@ -122,16 +119,13 @@ namespace QualityOfLifeONI
             Element liquidElement = targetGasElement.lowTempTransition;
             float massToConvert = batchMass;
 
-            // Select output temperature based on configured CoolingMode
             float targetTempKelvin;
-            if (PlayerConfig.Instance?.OutputCoolingMode == CoolingMode.Safe)
+            if (ModInit.Config?.CryoCondenser_OutputCoolingMode == CoolingMode.Safe)
             {
-                // Safe Mode: Freezing point + 4K buffer
                 targetTempKelvin = liquidElement.lowTemp + 4f;
             }
             else
             {
-                // Legacy Mode: Boiling point - 14K
                 targetTempKelvin = Mathf.Max(targetGasElement.lowTemp - 14f, 1f);
             }
 
@@ -170,7 +164,6 @@ namespace QualityOfLifeONI
 
             if (tempDiff > 0f)
             {
-                // Mass converted naturally yields heat into the building
                 float heatExtractedDTU = massToConvert * targetGasElement.specificHeatCapacity * tempDiff;
                 float buildingMass = primaryElement.Mass;
                 float buildingSHC = primaryElement.Element.specificHeatCapacity;
@@ -183,7 +176,6 @@ namespace QualityOfLifeONI
 
             operational.SetActive(true);
 
-            // Dispense liquid packet
             SimHashes liquidHash = liquidElement.id;
             storage.AddLiquid(
                 liquidHash,
@@ -205,18 +197,17 @@ namespace QualityOfLifeONI
             ? "Currently operating at 4x speed and consuming 4x power."
             : "Currently operating at normal speed and power consumption.";
 
-        public bool SidescreenEnabled() => PlayerConfig.Instance?.EnableTurboMode ?? false;
+        public bool SidescreenEnabled() => ModInit.Config?.CryoCondenser_EnableTurboMode ?? false;
 
-        public bool SidescreenButtonInteractable() => PlayerConfig.Instance?.EnableTurboMode ?? false;
+        public bool SidescreenButtonInteractable() => ModInit.Config?.CryoCondenser_EnableTurboMode ?? false;
 
-        // Hide the sidescreen button completely when option is disabled
-        public bool SidescreenButtonShowable() => PlayerConfig.Instance?.EnableTurboMode ?? false;
+        public bool SidescreenButtonShowable() => ModInit.Config?.CryoCondenser_EnableTurboMode ?? false;
 
         public void SetButtonTextOverride(ButtonMenuTextOverride text) { }
 
         public void OnSidescreenButtonPressed()
         {
-            if (PlayerConfig.Instance?.EnableTurboMode ?? false)
+            if (ModInit.Config?.CryoCondenser_EnableTurboMode ?? false)
             {
                 isTurboMode = !isTurboMode;
                 UpdatePowerConsumption();
