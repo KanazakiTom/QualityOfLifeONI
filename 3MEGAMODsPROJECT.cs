@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -3983,17 +3984,24 @@ namespace QualityOfLifeONI
             }
         }
     }
-
     public sealed class EfficientFetchPatches
     {
         private const int ERROR_THRESHOLD = 10;
         private static int errorCount;
-        private static EfficientFetchOptions options;
 
         public static void Init(Harmony harmony)
         {
-            EfficientFetchPatches.options = new EfficientFetchOptions();
             new PPatchManager(harmony).RegisterPatchClass(typeof(EfficientFetchPatches));
+        }
+
+        [PLibMethod(5U)]
+        internal static void OnStartGame()
+        {
+            int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
+            float ratio = Mathf.Clamp01(minPercent * 0.01f);
+
+            PUtil.LogDebug($"EfficientFetch starting: Min Ratio={minPercent}%");
+            EfficientFetchManager.CreateInstance(ratio);
         }
 
         [PLibMethod(6U)]
@@ -4003,13 +4011,6 @@ namespace QualityOfLifeONI
             EfficientFetchManager.DestroyInstance();
         }
 
-        [PLibMethod(5U)]
-        internal static void OnStartGame()
-        {
-            options = POptions.ReadSettings<EfficientFetchOptions>() ?? new EfficientFetchOptions();
-            PUtil.LogDebug("EfficientFetch starting: Min Ratio={0:D}%".F(options.MinimumAmountPercent));
-            EfficientFetchManager.CreateInstance(options.GetMinimumRatio());
-        }
 
         [HarmonyPatch(typeof(FetchChore), "FindFetchTarget")]
         public static class FetchChore_FindFetchTarget_Patch
@@ -4018,7 +4019,9 @@ namespace QualityOfLifeONI
             {
                 EfficientFetchManager instance = EfficientFetchManager.Instance;
                 bool result = true;
-                if (instance != null && options.MinimumAmountPercent > 0)
+
+                int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
+                if (instance != null && minPercent > 0)
                 {
                     result = instance.FindFetchTarget(__instance, consumer_state, out __result);
                 }
@@ -4033,7 +4036,9 @@ namespace QualityOfLifeONI
             {
                 EfficientFetchManager instance = EfficientFetchManager.Instance;
                 bool result = true;
-                if (instance != null && options.MinimumAmountPercent > 0)
+
+                int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
+                if (instance != null && minPercent > 0)
                 {
                     try
                     {
@@ -4459,5 +4464,641 @@ namespace QualityOfLifeONI
             }
         }
     }
+    #endregion
+
+    #region Mod: Thermal Tooltip
+    public static class ThermalTooltipPatches   {
+        internal static ExtendedThermalTooltip TooltipInstance { get; private set; }
+        private static BetterInfoCardsCompat bicCompat;
+        private static BuildThermalTooltip buildingInstance;
+
+        public static void Init(Harmony harmony)
+        {
+            bicCompat = null;
+            buildingInstance = new BuildThermalTooltip();
+
+            // Register string keys and localization
+            LocString.CreateLocStringKeys(typeof(ThermalTooltipsStrings.UI), "STRINGS.");
+
+            // Register PLib hooks if needed
+            new PPatchManager(harmony).RegisterPatchClass(typeof(ThermalTooltipPatches));
+
+            // Setup tooltips instance
+            SetupTooltips();
+        }
+
+        [PLibMethod((uint)RunAt.OnStartGame)]
+        internal static void SetupTooltips()
+        {
+            SetupCompat();
+
+            // Map options from ModInit.Config
+            var options = new ThermalTooltipsOptions
+            {
+                AllUnits = ModInit.Config?.ThermalTooltip_AllUnits ?? false,
+                OnlyOnThermalOverlay = ModInit.Config?.ThermalTooltip_OnlyOnThermalOverlay ?? true
+            };
+
+            if (PPatchTools.GetTypeSafe("DisplayAllTemps.State", "DisplayAllTemps") != null)
+            {
+                PUtil.LogDebug("DisplayAllTemps compatibility activated");
+                options.AllUnits = false;
+            }
+
+            TooltipInstance = new ExtendedThermalTooltip(options, bicCompat);
+            PUtil.LogDebug("Created ExtendedThermalTooltip");
+        }
+
+        [PLibMethod((uint)RunAt.OnEndGame)]
+        internal static void CleanupTooltips()
+        {
+            PUtil.LogDebug("Destroying ExtendedThermalTooltip");
+            if (buildingInstance != null)
+            {
+                buildingInstance.ClearDef();
+            }
+            TooltipInstance = null;
+        }
+
+        internal static void SetupCompat()
+        {
+            bicCompat = new BetterInfoCardsCompat();
+        }
+
+        // --- Harmony Patches ---
+
+        [HarmonyPatch(typeof(MaterialSelector), "SetEffects")]
+        public static class MaterialSelector_SetEffects_Patch
+        {
+            [HarmonyPriority(200)]
+            internal static bool Prefix(MaterialSelector __instance, Tag element)
+            {
+                DescriptorPanel materialEffectsPane = __instance.MaterialEffectsPane;
+                bool flag = buildingInstance != null && __instance.selectorIndex == 0 && __instance.MaterialDescriptionPane != null && materialEffectsPane != null;
+                if (flag)
+                {
+                    buildingInstance.AddThermalInfo(materialEffectsPane, element);
+                }
+                return !flag;
+            }
+        }
+
+        [HarmonyPatch(typeof(ProductInfoScreen), "Close")]
+        public static class ProductInfoScreen_Close_Patch
+        {
+            internal static void Postfix()
+            {
+                if (buildingInstance != null)
+                {
+                    buildingInstance.ClearDef();
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(ProductInfoScreen), "SetMaterials")]
+        public static class ProductInfoScreen_SetMaterials_Patch
+        {
+            internal static void Prefix(BuildingDef def)
+            {
+                if (buildingInstance != null)
+                {
+                    buildingInstance.Def = def;
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(SelectToolHoverTextCard), "UpdateHoverElements")]
+        public static class SelectToolHoverTextCard_UpdateHoverElements_Patch
+        {
+            [HarmonyPriority(300)]
+            internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> method)
+            {
+                return new ThermalTranspilerPatch().DoTranspile(method);
+            }
+        }
+    }
+
+    public class ThermalTooltipsOptions
+    {
+        public bool AllUnits { get; set; } = false;
+        public bool OnlyOnThermalOverlay { get; set; } = true;
+    }
+
+    public sealed class ExtendedThermalTooltip
+    {
+        internal static string DoScientific(float value)
+        {
+            if (value >= 1000000f || value <= -1000000f)
+            {
+                string text = value.ToString("E3", CultureInfo.InvariantCulture).ToLowerInvariant();
+                int num = text.IndexOf('e');
+                if (num > 0 && int.TryParse(text.Substring(num + 1), out int num2))
+                {
+                    return string.Format("{0}x10<sup>{1:D}</sup>", text.Substring(0, num), num2);
+                }
+                return text;
+            }
+            return value.ToString("##0.#");
+        }
+
+        public int Cell { get; set; }
+        public HoverTextDrawer Drawer { get; set; }
+        public PrimaryElement PrimaryElement { get; set; }
+        public TextStyleSetting Style { get; set; }
+
+        private readonly BetterInfoCardsCompat bicCompat;
+        private readonly ThermalTooltipsOptions options;
+        private readonly Sprite spriteCold;
+        private readonly Sprite spriteDash;
+        private readonly Sprite spriteHot;
+
+        internal ExtendedThermalTooltip(ThermalTooltipsOptions options, BetterInfoCardsCompat compat = null)
+        {
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.bicCompat = compat;
+            this.Cell = 0;
+            this.PrimaryElement = null;
+            this.Drawer = null;
+            this.Style = null;
+            this.spriteDash = Assets.GetSprite("dash");
+            this.spriteCold = Assets.GetSprite("crew_state_temp_down");
+            this.spriteHot = Assets.GetSprite("crew_state_temp_up");
+        }
+
+        private void DisplayElement(Element element, string oldElementName = null)
+        {
+            GameObject prefab = Assets.GetPrefab(element.tag);
+            global::Tuple<Sprite, Color> uisprite;
+            if (prefab != null && (uisprite = Def.GetUISprite(prefab, "ui", false)) != null)
+            {
+                this.Drawer.DrawIcon(uisprite.first, uisprite.second, 22, 2);
+            }
+            this.Drawer.DrawText(element.FormatName(oldElementName), this.Style);
+        }
+
+        public void DisplayThermalInfo(Element element, float temperature, float mass, float insulation = 1f)
+        {
+            if (this.Drawer == null || this.Style == null) return;
+
+            if (element != null && (SimDebugView.Instance.GetMode() == OverlayModes.Temperature.ID || !this.options.OnlyOnThermalOverlay) && element.specificHeatCapacity > 0f)
+            {
+                string oldName = UI.StripLinkFormatting(element.name);
+                this.DisplayThermalStats(element, temperature, mass, insulation);
+                Element lowTempTransition = element.lowTempTransition;
+                if (lowTempTransition.IsValidTransition(element))
+                {
+                    this.DisplayTransitionSprite(this.spriteCold);
+                    this.DisplayTransition(lowTempTransition, Math.Max(0.1f, element.lowTemp - 3f), element.lowTempTransitionOreID, element.lowTempTransitionOreMassConversion, oldName);
+                }
+                Element highTempTransition = element.highTempTransition;
+                if (highTempTransition.IsValidTransition(element))
+                {
+                    this.DisplayTransitionSprite(this.spriteHot);
+                    this.DisplayTransition(highTempTransition, element.highTemp + 3f, element.highTempTransitionOreID, element.highTempTransitionOreMassConversion, oldName);
+                }
+            }
+            else
+            {
+                this.Drawer.DrawText(this.GetTemperatureString(temperature), this.Style);
+            }
+        }
+
+        private void DisplayThermalStats(Element element, float temp, float mass, float insulation)
+        {
+            float thermalConductivity = element.thermalConductivity;
+            float specificHeatCapacity = element.specificHeatCapacity;
+            float displaySHC = GameUtil.GetDisplaySHC(mass * specificHeatCapacity);
+            float num = mass * specificHeatCapacity * temp;
+            string text = UI.UNITSUFFIXES.HEAT.KDTU.text.Trim();
+            this.Drawer.DrawText(this.GetTemperatureString(temp), this.Style);
+            this.Drawer.NewLine(26);
+            this.Drawer.DrawIcon(this.spriteDash, 18);
+            this.Drawer.DrawText(string.Format(UI.ELEMENTAL.THERMALCONDUCTIVITY.NAME, GameUtil.GetFormattedThermalConductivity(thermalConductivity * insulation)), this.Style);
+            this.Drawer.NewLine(26);
+            this.Drawer.DrawIcon(this.spriteDash, 18);
+
+            bicCompat?.Export("PeterHan.ThermalTooltips.ThermalMass", displaySHC);
+
+            string format = ThermalTooltipsStrings.UI.THERMALTOOLTIPS.THERMAL_MASS;
+            object arg = ExtendedThermalTooltip.DoScientific(displaySHC);
+            string temperatureUnitSuffix = GameUtil.GetTemperatureUnitSuffix();
+            this.Drawer.DrawText(string.Format(format, arg, text, temperatureUnitSuffix?.Trim()), this.Style);
+            this.Drawer.NewLine(26);
+            this.Drawer.DrawIcon(this.spriteDash, 18);
+
+            bicCompat?.Export("PeterHan.ThermalTooltips.HeatEnergy", num);
+
+            this.Drawer.DrawText(string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.HEAT_ENERGY, ExtendedThermalTooltip.DoScientific(num), text), this.Style);
+        }
+
+        private void DisplayTransition(Element newElement, float temp, SimHashes secondary, float ratio, string oldName)
+        {
+            this.DisplayElement(newElement, oldName);
+            if (secondary != SimHashes.Vacuum && secondary != SimHashes.Void && ratio > 0f)
+            {
+                Element element = ElementLoader.FindElementByHash(secondary);
+                ratio *= 100f;
+                if (element != null)
+                {
+                    this.Drawer.DrawText(string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.AND_JOIN, GameUtil.GetFormattedPercent(100f - ratio, GameUtil.TimeSlice.None)), this.Style);
+                    this.DisplayElement(element, oldName);
+                    this.Drawer.DrawText(string.Format("[{0}]", GameUtil.GetFormattedPercent(ratio, GameUtil.TimeSlice.None)), this.Style);
+                }
+            }
+            this.Drawer.DrawText(" ({0:##0.#})".F(this.GetTemperatureString(temp)), this.Style);
+        }
+
+        private void DisplayTransitionSprite(Sprite sprite)
+        {
+            this.Drawer.NewLine(26);
+            this.Drawer.DrawIcon(this.spriteDash, 18);
+            if (sprite != null)
+            {
+                this.Drawer.DrawIcon(sprite, Color.white, 22, 2);
+            }
+            else
+            {
+                this.Drawer.DrawText(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.CHANGES, this.Style);
+            }
+            this.Drawer.DrawText(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.TO_JOIN, this.Style);
+        }
+
+        private string GetTemperatureString(float temp)
+        {
+            if (this.options.AllUnits)
+            {
+                string text = "{0:##0.#}{1}".F(GameUtil.GetTemperatureConvertedFromKelvin(temp, GameUtil.TemperatureUnit.Celsius), UI.UNITSUFFIXES.TEMPERATURE.CELSIUS);
+                string text2 = "{0:##0.#}{1}".F(GameUtil.GetTemperatureConvertedFromKelvin(temp, GameUtil.TemperatureUnit.Fahrenheit), UI.UNITSUFFIXES.TEMPERATURE.FAHRENHEIT);
+                string text3 = "{0:##0.#}{1}".F(temp, UI.UNITSUFFIXES.TEMPERATURE.KELVIN);
+
+                switch (GameUtil.temperatureUnit)
+                {
+                    case GameUtil.TemperatureUnit.Celsius:
+                        return "{0} / {1} / {2}".F(text, text2, text3);
+                    case GameUtil.TemperatureUnit.Fahrenheit:
+                        return "{0} / {1} / {2}".F(text2, text, text3);
+                    default:
+                        return "{0} / {1} / {2}".F(text3, text, text2);
+                }
+            }
+            return GameUtil.GetFormattedTemperature(temp, GameUtil.TimeSlice.None, GameUtil.TemperatureInterpretation.Absolute, true, false);
+        }
+    }
+
+    public sealed class BuildThermalTooltip
+    {
+        public BuildingDef Def { get; set; }
+
+        public BuildThermalTooltip() { this.Def = null; }
+
+        public void AddThermalInfo(DescriptorPanel effectsPane, Tag elementTag)
+        {
+            Element element = ElementLoader.GetElement(elementTag);
+            Descriptor item = default;
+            List<Descriptor> materialDescriptors = GameUtil.GetMaterialDescriptors(elementTag);
+            item.SetupDescriptor(ELEMENTS.MATERIAL_MODIFIERS.EFFECTS_HEADER, ELEMENTS.MATERIAL_MODIFIERS.TOOLTIP.EFFECTS_HEADER, Descriptor.DescriptorType.Effect);
+
+            if (materialDescriptors.Count > 0)
+            {
+                materialDescriptors.Insert(0, item);
+            }
+
+            if (element != null && this.Def != null)
+            {
+                float[] mass = this.Def.Mass;
+                string text = this.Def.Name ?? "";
+                float num = element.thermalConductivity * this.Def.ThermalConductivity;
+                float specificHeatCapacity = element.specificHeatCapacity;
+                float displaySHC = GameUtil.GetDisplaySHC(ThermalTranspilerPatch.GetAdjustedMass(this.Def.BuildingComplete, this.Def, (mass != null && mass.Length != 0) ? mass[0] : 0f) * specificHeatCapacity);
+                string text2 = GameUtil.GetTemperatureUnitSuffix().Trim();
+                string text3 = UI.UNITSUFFIXES.HEAT.KDTU.text;
+                string text4 = text3?.Trim();
+
+                if (materialDescriptors.Count == 0)
+                {
+                    materialDescriptors.Add(item);
+                }
+
+                string txt = string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.EFFECT_CONDUCTIVITY, num);
+                string format = ThermalTooltipsStrings.UI.THERMALTOOLTIPS.BUILDING_CONDUCTIVITY;
+                object[] array = new object[5]
+                {
+                    text,
+                    GameUtil.GetFormattedThermalConductivity(num),
+                    num,
+                    text2,
+                    UI.UNITSUFFIXES.HEAT.DTU_S.text?.Trim()
+                };
+
+                item.SetupDescriptor(txt, string.Format(format, array), Descriptor.DescriptorType.Effect);
+                item.IncreaseIndent();
+                materialDescriptors.Add(item);
+
+                item.SetupDescriptor(string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.EFFECT_THERMAL_MASS, displaySHC, text4, text2), string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.BUILDING_THERMAL_MASS, text, displaySHC, text4, text2), Descriptor.DescriptorType.Effect);
+                materialDescriptors.Add(item);
+
+                Element highTempTransition = element.highTempTransition;
+                if (highTempTransition.IsValidTransition(element))
+                {
+                    string formattedTemperature = GameUtil.GetFormattedTemperature(element.highTemp + 3f, GameUtil.TimeSlice.None, GameUtil.TemperatureInterpretation.Absolute, true, false);
+                    item.SetupDescriptor(string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.EFFECT_MELT_TEMPERATURE, formattedTemperature), string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.BUILDING_MELT_TEMPERATURE, text, formattedTemperature, highTempTransition.FormatName(UI.StripLinkFormatting(element.name))), Descriptor.DescriptorType.Effect);
+                    materialDescriptors.Add(item);
+                }
+            }
+
+            if (materialDescriptors.Count > 0)
+            {
+                effectsPane.gameObject.SetActive(true);
+                effectsPane.SetDescriptors(materialDescriptors);
+            }
+            else
+            {
+                effectsPane.gameObject.SetActive(false);
+            }
+        }
+
+        public void ClearDef() => this.Def = null;
+    }
+
+    internal sealed class ThermalTranspilerPatch
+    {
+        private readonly MethodInfo drawText;
+        private readonly MethodInfo getComponent;
+        private readonly MethodInfo marker;
+        private readonly MethodInfo posToCell;
+
+        internal ThermalTranspilerPatch()
+        {
+            this.drawText = typeof(HoverTextDrawer).GetMethodSafe("DrawText", false, typeof(string), typeof(TextStyleSetting));
+            MethodInfo methodSafe = typeof(Component).GetMethodSafe("GetComponent", false, Array.Empty<Type>());
+            this.getComponent = methodSafe?.MakeGenericMethod(typeof(PrimaryElement));
+            this.marker = typeof(GameUtil).GetMethodSafe("GetFormattedTemperature", true, typeof(float), typeof(GameUtil.TimeSlice), typeof(GameUtil.TemperatureInterpretation), typeof(bool), typeof(bool));
+            this.posToCell = typeof(Grid).GetMethodSafe("PosToCell", true, typeof(Vector3));
+        }
+
+        private static void AddThermalInfoEntities(HoverTextDrawer drawer, string _, TextStyleSetting style)
+        {
+            ExtendedThermalTooltip tooltipInstance = ThermalTooltipPatches.TooltipInstance;
+            PrimaryElement primaryElement = tooltipInstance?.PrimaryElement;
+            if (primaryElement != null)
+            {
+                float insulation = 1f;
+                BuildingDef def = null;
+                if (primaryElement.TryGetComponent<Building>(out var building))
+                {
+                    insulation = building.Def.ThermalConductivity;
+                    def = building.Def;
+                }
+                float adjustedMass = GetAdjustedMass(primaryElement.gameObject, def, primaryElement.Mass);
+                tooltipInstance.Drawer = drawer;
+                tooltipInstance.Style = style;
+                tooltipInstance.DisplayThermalInfo(primaryElement.Element, primaryElement.Temperature, adjustedMass, insulation);
+                tooltipInstance.PrimaryElement = null;
+            }
+        }
+
+        private static void AddThermalInfoElements(HoverTextDrawer drawer, string _, TextStyleSetting style)
+        {
+            ExtendedThermalTooltip tooltipInstance = ThermalTooltipPatches.TooltipInstance;
+            if (tooltipInstance != null && Grid.IsValidCell(tooltipInstance.Cell))
+            {
+                int cell = tooltipInstance.Cell;
+                Element element = Grid.Element[cell];
+                float num = Grid.Mass[cell];
+                if (element != null && num > 0f)
+                {
+                    tooltipInstance.Drawer = drawer;
+                    tooltipInstance.Style = style;
+                    tooltipInstance.DisplayThermalInfo(element, Grid.Temperature[cell], num, 1f);
+                }
+                tooltipInstance.Cell = 0;
+            }
+        }
+
+        public static float GetAdjustedMass(GameObject entity, BuildingDef def, float originalMass)
+        {
+            if (entity != null && def != null && entity.TryGetComponent<SimCellOccupier>(out var simCellOccupier) && simCellOccupier.IsVisuallySolid)
+            {
+                return def.MassForTemperatureModification;
+            }
+            return originalMass;
+        }
+
+        private static bool IsCallTo(CodeInstruction instruction, MethodInfo method)
+        {
+            return instruction != null && (instruction.opcode == OpCodes.Call || instruction.opcode == OpCodes.Callvirt) && method != null && method == instruction.operand as MethodInfo;
+        }
+
+        private static int SetCell(int cell)
+        {
+            ExtendedThermalTooltip tooltipInstance = ThermalTooltipPatches.TooltipInstance;
+            if (tooltipInstance != null) tooltipInstance.Cell = cell;
+            return cell;
+        }
+
+        private static PrimaryElement SetElement(PrimaryElement element)
+        {
+            ExtendedThermalTooltip tooltipInstance = ThermalTooltipPatches.TooltipInstance;
+            if (tooltipInstance != null && element != null) tooltipInstance.PrimaryElement = element;
+            return element;
+        }
+
+        internal IEnumerable<CodeInstruction> DoTranspile(IEnumerable<CodeInstruction> method)
+        {
+            List<CodeInstruction> list = new List<CodeInstruction>(method);
+            int num = list.Count;
+            bool flag = false;
+            bool flag2 = false;
+            int i = 0;
+
+            while (i < num && (!flag || !flag2))
+            {
+                CodeInstruction instruction = list[i];
+                if (IsCallTo(instruction, this.posToCell) && !flag)
+                {
+                    list.Insert(++i, new CodeInstruction(OpCodes.Call, typeof(ThermalTranspilerPatch).GetMethodSafe("SetCell", true, PPatchTools.AnyArguments)));
+                    flag = true;
+                    num++;
+                    i++;
+                }
+                if (IsCallTo(instruction, this.getComponent) && !flag2)
+                {
+                    list.Insert(++i, new CodeInstruction(OpCodes.Call, typeof(ThermalTranspilerPatch).GetMethodSafe("SetElement", true, PPatchTools.AnyArguments)));
+                    flag2 = true;
+                    num++;
+                    i++;
+                }
+                i++;
+            }
+            i++;
+
+            while (i < num && !IsCallTo(list[i], this.marker)) i++;
+            for (i++; i < num; i++)
+            {
+                CodeInstruction codeInstruction = list[i];
+                if (IsCallTo(codeInstruction, this.drawText))
+                {
+                    codeInstruction.opcode = OpCodes.Call;
+                    codeInstruction.operand = typeof(ThermalTranspilerPatch).GetMethodSafe("AddThermalInfoEntities", true, PPatchTools.AnyArguments);
+                    break;
+                }
+            }
+            i++;
+
+            while (i < num && !IsCallTo(list[i], this.marker)) i++;
+            for (i++; i < num; i++)
+            {
+                CodeInstruction codeInstruction2 = list[i];
+                if (IsCallTo(codeInstruction2, this.drawText))
+                {
+                    codeInstruction2.opcode = OpCodes.Call;
+                    codeInstruction2.operand = typeof(ThermalTranspilerPatch).GetMethodSafe("AddThermalInfoElements", true, PPatchTools.AnyArguments);
+                    break;
+                }
+            }
+
+            PUtil.LogDebug("UpdateHoverElements patch complete");
+            return list;
+        }
+    }
+
+    internal static class ExtensionMethods
+    {
+        public static string FormatName(this Element element, string originalName)
+        {
+            string text = UI.StripLinkFormatting(element.name);
+            if (text == originalName)
+            {
+                if (element.IsLiquid) text = ELEMENTS.STATE.LIQUID + " " + text;
+                else if (element.IsSolid) text = ELEMENTS.STATE.SOLID + " " + text;
+                else if (element.IsGas) text = ELEMENTS.STATE.GAS + " " + text;
+            }
+            return text;
+        }
+
+        public static bool IsValidTransition(this Element element, Element original)
+        {
+            if (element != null)
+            {
+                SimHashes id = element.id;
+                return id != SimHashes.Void && id != SimHashes.Vacuum && (original == null || id != original.id);
+            }
+            return false;
+        }
+    }
+
+    internal sealed class BetterInfoCardsCompat
+    {
+        private delegate void ExportMethodFunc(string title, object data);
+        private delegate void RegisterMethodFunc(string name, object getValue, object getTextOverride, object splitListDefs);
+
+        private readonly ExportMethodFunc exportMethod;
+
+        internal BetterInfoCardsCompat()
+        {
+            RegisterMethodFunc registerMethodFunc = null;
+            this.exportMethod = null;
+            try
+            {
+                Type typeSafe = PPatchTools.GetTypeSafe("BetterInfoCards.ConverterManager", "BetterInfoCards");
+                registerMethodFunc = typeSafe?.Detour<RegisterMethodFunc>("AddConverterReflect");
+                Type typeSafe2 = PPatchTools.GetTypeSafe("BetterInfoCards.CollectHoverInfo", "BetterInfoCards");
+                Type type = typeSafe2?.GetNestedType("GetSelectInfo_Patch", BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                if (type != null)
+                {
+                    this.exportMethod = type.Detour<ExportMethodFunc>("Export");
+                }
+            }
+            catch (Exception ex)
+            {
+                PUtil.LogWarning("Exception when loading Better Info Cards compatibility:");
+                PUtil.LogExcWarn(ex);
+            }
+
+            if (registerMethodFunc != null && this.exportMethod != null)
+            {
+                try
+                {
+                    Register<float>(registerMethodFunc, "PeterHan.ThermalTooltips.ThermalMass", ObjectToFloat, SumThermalMass);
+                    Register<float>(registerMethodFunc, "PeterHan.ThermalTooltips.HeatEnergy", ObjectToFloat, SumHeatEnergy);
+                    PUtil.LogDebug("Registered Better Info Cards status data handlers");
+                }
+                catch (Exception ex)
+                {
+                    PUtil.LogWarning("Exception when registering Better Info Cards compatibility:");
+                    PUtil.LogExcWarn(ex.GetBaseException());
+                }
+            }
+        }
+
+        private static void Register<T>(RegisterMethodFunc registerMethod, string title, Func<object, T> getValue, Func<string, List<T>, string> getTextOverride)
+        {
+            registerMethod(title, getValue, getTextOverride, null);
+        }
+
+        private static string SumHeatEnergy(string _, List<float> values)
+        {
+            float num = 0f;
+            foreach (float num2 in values) num += num2;
+            return string.Format(ThermalTooltipsStrings.UI.THERMALTOOLTIPS.HEAT_ENERGY, ExtendedThermalTooltip.DoScientific(num), UI.UNITSUFFIXES.HEAT.KDTU.text.Trim()) + ThermalTooltipsStrings.UI.THERMALTOOLTIPS.SUM;
+        }
+
+        private static string SumThermalMass(string _, List<float> values)
+        {
+            float num = 0f;
+            foreach (float num2 in values) num += num2;
+            string format = ThermalTooltipsStrings.UI.THERMALTOOLTIPS.THERMAL_MASS;
+            object arg = ExtendedThermalTooltip.DoScientific(num);
+            object arg2 = UI.UNITSUFFIXES.HEAT.KDTU.text.Trim();
+            string temperatureUnitSuffix = GameUtil.GetTemperatureUnitSuffix();
+            return string.Format(format, arg, arg2, temperatureUnitSuffix?.Trim()) + ThermalTooltipsStrings.UI.THERMALTOOLTIPS.SUM;
+        }
+
+        private static float ObjectToFloat(object data) => data is float f ? f : 0f;
+
+        public void Export(string title, object data) => this.exportMethod?.Invoke(title, data);
+    }
+
+    internal static class ThermalTooltipsStrings
+    {
+        public static class UI
+        {
+            public static class THERMALTOOLTIPS
+            {
+                public static LocString AND_JOIN = "[{0}] and ";
+                public static LocString BUILDING_CONDUCTIVITY = "The completed {0} will have a thermal conductivity of <b>{1}</b>\n\nFor every 1 {3} of difference between the building's " + STRINGS.UI.FormatAsLink("Temperature", "HEAT") + " and its surroundings, {2:##0.#} {4} will be transferred";
+                public static LocString BUILDING_MELT_TEMPERATURE = "The completed {0} will melt at <b>{1}</b> into {2}";
+                public static LocString BUILDING_THERMAL_MASS = "The completed {0} will have a thermal mass of <b>{1:##0.#} {2}/{3}</b>\n\nAdding or removing {1:##0.#} {2} will change the building's " + STRINGS.UI.FormatAsLink("Temperature", "HEAT") + " by 1 {3}";
+                public static LocString CHANGES = "Changes";
+                public static LocString EFFECT_CONDUCTIVITY = STRINGS.UI.FormatAsLink("Thermal Conductivity", "HEAT") + ": {0}";
+                public static LocString EFFECT_MELT_TEMPERATURE = STRINGS.UI.FormatAsLink("Melting Point", "HEAT") + ": {0}";
+                public static LocString EFFECT_THERMAL_MASS = STRINGS.UI.FormatAsLink("Thermal Mass", "HEAT") + ": {0:##0.#} {1}/{2}";
+                public static LocString HEAT_ENERGY = "Heat Energy: {0} {1}";
+                public static LocString SUM = " (Σ)";
+                public static LocString THERMAL_MASS = "Thermal Mass: {0} {1}/{2}";
+                public static LocString TO_JOIN = " to ";
+            }
+        }
+    }
+    #endregion
+
+    #region Mod:
+
+    #endregion
+
+    #region Mod:
+
+    #endregion
+
+    #region Mod:
+
+    #endregion
+
+    #region Mod:
+
+    #endregion
+
+    #region Mod:
+
     #endregion
 }
