@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -5310,7 +5311,259 @@ namespace QualityOfLifeONI
     #endregion
 
     #region Mod: Pliers Fixed
+    public static class PliersAssets
+    {
+        public static string PLIERS_TOOLNAME = "PliersTool";
+        public static string PLIERS_ICON_NAME = "PLIERS.TOOL.ICON";
+        public static Sprite PLIERS_ICON_SPRITE;
+        public static Sprite PLIERS_VISUALIZER_SPRITE;
+        public static PAction PLIERS_OPENTOOL;
+        public static ToolMenu.ToolCollection PLIERS_TOOLCOLLECTION;
+        public static Color PLIERS_COLOR_DRAG = new Color32(byte.MaxValue, 140, 105, byte.MaxValue);
+    }
 
+    internal static class PliersStrings
+    {
+        public static LocString STRING_PLIERS_NAME = "Pliers";
+        public static LocString STRING_PLIERS_TOOLTIP = "Disconnect utility networks {0}";
+        public static LocString STRING_PLIERS_TOOLTIP_TITLE = "PLIERS";
+        public static LocString STRING_PLIERS_ACTION_DRAG = "DRAG";
+        public static LocString STRING_PLIERS_ACTION_BACK = "BACK";
+    }
+
+    public static class PliersUtils
+    {
+        public static Sprite CreateSpriteDxt5(Stream inputStream, int width, int height)
+        {
+            byte[] array = new byte[inputStream.Length - 128L];
+            inputStream.Seek(128L, SeekOrigin.Current);
+            inputStream.Read(array, 0, array.Length);
+            Texture2D texture2D = new Texture2D(width, height, TextureFormat.DXT5, false);
+            texture2D.LoadRawTextureData(array);
+            texture2D.Apply(false, true);
+            return Sprite.Create(texture2D, new Rect(0f, 0f, (float)width, (float)height), new Vector2(0.5f, 0.5f));
+        }
+
+        public static CellOffset ConnectionsToOffset(UtilityConnections utilityConnections)
+        {
+            switch (utilityConnections)
+            {
+                case UtilityConnections.Left: return new CellOffset(-1, 0);
+                case UtilityConnections.Right: return new CellOffset(1, 0);
+                case UtilityConnections.Up: return new CellOffset(0, 1);
+            }
+            return new CellOffset(0, -1);
+        }
+    }
+
+    internal class PliersToolHoverCard : HoverTextConfiguration
+    {
+        public PliersToolHoverCard()
+        {
+            this.ToolName = PliersStrings.STRING_PLIERS_TOOLTIP_TITLE;
+        }
+
+        public override void UpdateHoverElements(List<KSelectable> hoveredObjects)
+        {
+            HoverTextScreen instance = HoverTextScreen.Instance;
+            HoverTextDrawer hoverTextDrawer = instance.BeginDrawing();
+            hoverTextDrawer.BeginShadowBar(false);
+            base.DrawTitle(instance, hoverTextDrawer);
+            hoverTextDrawer.NewLine(26);
+            hoverTextDrawer.DrawIcon(instance.GetSprite("icon_mouse_left"), 20);
+            hoverTextDrawer.DrawText(PliersStrings.STRING_PLIERS_ACTION_DRAG, this.Styles_Instruction.Standard);
+            hoverTextDrawer.AddIndent(8);
+            hoverTextDrawer.DrawIcon(instance.GetSprite("icon_mouse_right"), 20);
+            hoverTextDrawer.DrawText(PliersStrings.STRING_PLIERS_ACTION_BACK, this.Styles_Instruction.Standard);
+            hoverTextDrawer.EndShadowBar();
+            hoverTextDrawer.EndDrawing();
+        }
+    }
+
+    public sealed class PliersTool : FilteredDragTool
+    {
+        public static PliersTool Instance { get; private set; }
+        private static readonly UtilityConnections[] Connections;
+
+        public PliersTool()
+        {
+            Instance = this;
+        }
+
+        public static void DestroyInstance()
+        {
+            Instance = null;
+        }
+
+        protected override void OnPrefabInit()
+        {
+            base.OnPrefabInit();
+            this.visualizer = new GameObject("PliersVisualizer");
+            this.visualizer.SetActive(false);
+            GameObject gameObject = new GameObject();
+            SpriteRenderer spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+            spriteRenderer.color = PliersAssets.PLIERS_COLOR_DRAG;
+            spriteRenderer.sprite = PliersAssets.PLIERS_VISUALIZER_SPRITE;
+            gameObject.transform.SetParent(this.visualizer.transform);
+            gameObject.transform.localPosition = new Vector3(0f, Grid.HalfCellSizeInMeters);
+            Sprite sprite = spriteRenderer.sprite;
+            gameObject.transform.localScale = new Vector3(Grid.CellSizeInMeters / ((float)sprite.texture.width / sprite.pixelsPerUnit), Grid.CellSizeInMeters / ((float)sprite.texture.height / sprite.pixelsPerUnit));
+            gameObject.SetLayerRecursively(LayerMask.NameToLayer("Overlay"));
+            this.visualizer.transform.SetParent(base.transform);
+            FieldInfo fieldInfo = AccessTools.Field(typeof(DragTool), "areaVisualizer");
+            FieldInfo fieldInfo2 = AccessTools.Field(typeof(DragTool), "areaVisualizerSpriteRenderer");
+            GameObject gameObject2 = Util.KInstantiate((GameObject)AccessTools.Field(typeof(DeconstructTool), "areaVisualizer").GetValue(DeconstructTool.Instance), null, null);
+            gameObject2.SetActive(false);
+            gameObject2.name = "PliersAreaVisualizer";
+            fieldInfo2.SetValue(this, gameObject2.GetComponent<SpriteRenderer>());
+            gameObject2.transform.SetParent(base.transform);
+            gameObject2.GetComponent<SpriteRenderer>().color = PliersAssets.PLIERS_COLOR_DRAG;
+            gameObject2.GetComponent<SpriteRenderer>().material.color = PliersAssets.PLIERS_COLOR_DRAG;
+            fieldInfo.SetValue(this, gameObject2);
+            base.gameObject.AddComponent<PliersToolHoverCard>();
+        }
+
+        protected override void GetDefaultFilters(Dictionary<string, ToolParameterMenu.ToggleState> filters)
+        {
+            filters.Add(ToolParameterMenu.FILTERLAYERS.ALL, ToolParameterMenu.ToggleState.On);
+            filters.Add(ToolParameterMenu.FILTERLAYERS.WIRES, ToolParameterMenu.ToggleState.Off);
+            filters.Add(ToolParameterMenu.FILTERLAYERS.LIQUIDCONDUIT, ToolParameterMenu.ToggleState.Off);
+            filters.Add(ToolParameterMenu.FILTERLAYERS.GASCONDUIT, ToolParameterMenu.ToggleState.Off);
+            filters.Add(ToolParameterMenu.FILTERLAYERS.SOLIDCONDUIT, ToolParameterMenu.ToggleState.Off);
+            filters.Add(ToolParameterMenu.FILTERLAYERS.LOGIC, ToolParameterMenu.ToggleState.Off);
+        }
+
+        protected override void OnDragComplete(Vector3 cursorDown, Vector3 cursorUp)
+        {
+            base.OnDragComplete(cursorDown, cursorUp);
+            if (this.hasFocus)
+            {
+                int num; int num2;
+                Grid.PosToXY(cursorDown, out num, out num2);
+                int num3; int num4;
+                Grid.PosToXY(cursorUp, out num3, out num4);
+                if (num > num3) Util.Swap<int>(ref num, ref num3);
+                if (num2 > num4) Util.Swap<int>(ref num2, ref num4);
+
+                for (int i = num; i <= num3; i++)
+                {
+                    for (int j = num2; j <= num4; j++)
+                    {
+                        int cell = Grid.XYToCell(i, j);
+                        if (Grid.IsVisible(cell))
+                        {
+                            for (int k = 0; k < Grid.ObjectLayers.Length; k++)
+                            {
+                                GameObject gameObject = Grid.Objects[cell, k];
+                                Building component;
+                                IHaveUtilityNetworkMgr component2;
+                                if (gameObject != null && (component = gameObject.GetComponent<Building>()) != null && base.IsActiveLayer(this.GetFilterLayerFromGameObject(gameObject)) && (component2 = component.Def.BuildingComplete.GetComponent<IHaveUtilityNetworkMgr>()) != null)
+                                {
+                                    UtilityConnections utilityConnections = (UtilityConnections)0;
+                                    UtilityConnections connections = component2.GetNetworkManager().GetConnections(cell, false);
+                                    foreach (UtilityConnections utilityConnections2 in PliersTool.Connections)
+                                    {
+                                        if ((connections & utilityConnections2) == utilityConnections2)
+                                        {
+                                            int cell2 = Grid.OffsetCell(cell, PliersUtils.ConnectionsToOffset(utilityConnections2));
+                                            if (Grid.IsValidBuildingCell(cell2))
+                                            {
+                                                int num5; int num6;
+                                                Grid.CellToXY(cell2, out num5, out num6);
+                                                if (num5 >= num && num5 <= num3 && num6 >= num2 && num6 <= num4)
+                                                {
+                                                    GameObject gameObject2 = Grid.Objects[cell2, k];
+                                                    Building component3;
+                                                    if (gameObject2 != null && (component3 = gameObject2.GetComponent<Building>()) != null && component3.Def.BuildingComplete.GetComponent<IHaveUtilityNetworkMgr>() != null && base.IsActiveLayer(this.GetFilterLayerFromGameObject(gameObject)))
+                                                    {
+                                                        utilityConnections |= utilityConnections2;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (utilityConnections != (UtilityConnections)0)
+                                    {
+                                        if (component.GetComponent<KAnimGraphTileVisualizer>() != null)
+                                        {
+                                            component.GetComponent<KAnimGraphTileVisualizer>().UpdateConnections(connections & ~utilityConnections);
+                                            component.GetComponent<KAnimGraphTileVisualizer>().Refresh();
+                                        }
+                                        TileVisualizer.RefreshCell(cell, component.Def.TileLayer, component.Def.ReplacementLayer);
+                                        IUtilityNetworkMgr networkManager = component2.GetNetworkManager();
+                                        if (networkManager != null)
+                                        {
+                                            networkManager.ForceRebuildNetworks();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        static PliersTool()
+        {
+            Connections = new UtilityConnections[] {
+                UtilityConnections.Left,
+                UtilityConnections.Right,
+                UtilityConnections.Up,
+                UtilityConnections.Down
+            };
+        }
+    }
+
+    [HarmonyPatch(typeof(PlayerController), "OnPrefabInit")]
+    public static class PlayerControllerOnPrefabInit_Pliers
+    {
+        public static void Postfix(PlayerController __instance)
+        {
+            List<InterfaceTool> list = new List<InterfaceTool>(__instance.tools);
+            GameObject gameObject = new GameObject(PliersAssets.PLIERS_TOOLNAME);
+            gameObject.AddComponent<PliersTool>();
+            gameObject.transform.SetParent(__instance.gameObject.transform);
+            gameObject.SetActive(true);
+            gameObject.SetActive(false);
+            list.Add(gameObject.GetComponent<InterfaceTool>());
+            __instance.tools = list.ToArray();
+        }
+    }
+
+    [HarmonyPatch(typeof(ToolMenu), "CreateBasicTools")]
+    public static class ToolMenuCreateBasicTools_Pliers
+    {
+        public static void Prefix(ToolMenu __instance)
+        {
+            __instance.basicTools.Add(ToolMenu.CreateToolCollection(PliersStrings.STRING_PLIERS_NAME, PliersAssets.PLIERS_ICON_NAME, PliersAssets.PLIERS_OPENTOOL.GetKAction(), PliersAssets.PLIERS_TOOLNAME, string.Format(PliersStrings.STRING_PLIERS_TOOLTIP, "{Hotkey}"), false));
+        }
+    }
+
+    [HarmonyPatch(typeof(ToolMenu), "OnPrefabInit")]
+    public static class ToolMenuOnPrefabInit_Pliers
+    {
+        public static void Postfix()
+        {
+            if (PliersAssets.PLIERS_ICON_SPRITE != null)
+            {
+                if (Assets.Sprites.ContainsKey(PliersAssets.PLIERS_ICON_SPRITE.name))
+                {
+                    Assets.Sprites.Remove(PliersAssets.PLIERS_ICON_SPRITE.name);
+                }
+                Assets.Sprites.Add(PliersAssets.PLIERS_ICON_SPRITE.name, PliersAssets.PLIERS_ICON_SPRITE);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Game), "DestroyInstances")]
+    public static class GameDestroyInstances_Pliers
+    {
+        public static void Postfix()
+        {
+            PliersTool.DestroyInstance();
+        }
+    }
     #endregion
 
     #region Mod:

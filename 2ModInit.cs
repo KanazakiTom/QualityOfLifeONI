@@ -6,6 +6,7 @@ using System.Reflection;
 //using CaiLib.Utils;
 using HarmonyLib;
 using KMod;
+using PeterHan.PLib.Actions;
 using PeterHan.PLib.AVC;
 using PeterHan.PLib.Core;
 using PeterHan.PLib.Options;
@@ -67,6 +68,28 @@ namespace QualityOfLifeONI
             new PVersionCheck().Register(this, new SteamVersionChecker());
 
             Config = POptions.ReadSettings<QoLConfig>() ?? new QoLConfig();
+
+            // --- PLIERS INITIALIZATION ---
+            // Ensure the .dds images are included in your Visual Studio project as "Embedded Resources" 
+            // inside an "images" folder at the root of the project.
+            string assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
+
+            using (var buttonStream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"{assemblyName}.images.image_wirecutter_button.dds"))
+            using (var visStream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"{assemblyName}.images.image_wirecutter_visualizer.dds"))
+            {
+                if (buttonStream != null)
+                {
+                    PliersAssets.PLIERS_ICON_SPRITE = PliersUtils.CreateSpriteDxt5(buttonStream, 32, 32);
+                    PliersAssets.PLIERS_ICON_SPRITE.name = PliersAssets.PLIERS_ICON_NAME;
+                }
+                if (visStream != null)
+                {
+                    PliersAssets.PLIERS_VISUALIZER_SPRITE = PliersUtils.CreateSpriteDxt5(visStream, 256, 256);
+                }
+            }
+
+            PliersAssets.PLIERS_OPENTOOL = new PActionManager().CreateAction("Pliers.opentool", "Pliers", new PKeyBinding(KKeyCode.None, Modifier.None));
+            // -----------------------------
 
             Console.WriteLine($"Mod <{Name}> loaded: {Version}");
         }
