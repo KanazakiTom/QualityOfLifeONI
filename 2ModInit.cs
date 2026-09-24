@@ -38,6 +38,9 @@ namespace QualityOfLifeONI
 
             // Initialize target types for No Sensor Limits
             NoSensorLimitsPatches.InitializeTypes();
+
+            // Register FastTrack compatibility patch
+            FastTrack_SuitMarkerUpdater_Patch.Patch(harmony);
         }
 
         public override void OnLoad(Harmony harmony)
@@ -49,9 +52,11 @@ namespace QualityOfLifeONI
             PipPlantOverlayPatches.Init(harmony);
             NoWasteWantPatches.Init(harmony);
             ForbidItemsPatches.Init(harmony);
-            EfficientFetchPatches.Init(harmony);
+            //EfficientFetchPatches.Init(harmony);
             FinishTasksPatches.Init(harmony);
             ThermalTooltipPatches.Init(harmony);
+
+            SuitMarker_UnequipSuitReactable_Patch.Patch(harmony);
 
             // 3. Other initializations
             MopTool.maxMopAmt = float.PositiveInfinity;

@@ -10,6 +10,20 @@ namespace QualityOfLifeONI
     [RestartRequired]
     public class QoLConfig
     {
+        #region Mod: Auto Suit Delivery
+        // ------------------------------------------
+        // CATEGORY: AUTO SUIT DELIVERY
+        // ------------------------------------------
+        [Option("Delivery After Time (s)", "Time in in-game seconds after which a suit is delivered.", "Auto Suit Delivery")]
+        [Limit(0, 3600)]
+        [JsonProperty]
+        public int AutoSuitDelivery_DeliveryAfterTime { get; set; } = 600;
+
+        [Option("Avoid Notification", "Avoid the 'No Docks available' notification for applicable docks.", "Auto Suit Delivery")]
+        [JsonProperty]
+        public bool AutoSuitDelivery_AvoidNotification { get; set; } = true;
+        #endregion
+
         #region Mod: QOL-BEETA
         // ------------------------------------------
         // CATEGORY: BEETA SETTINGS
@@ -177,9 +191,7 @@ namespace QualityOfLifeONI
         public PriorityFilterOptions DefaultPriorityFilter { get; set; } = PriorityFilterOptions.All;
         #endregion
 
-        #region Mod:
-
-        #endregion
+        
 
         #region Mod:
 

@@ -3705,359 +3705,359 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-    #region Mod: Efficient Supply
-    [JsonObject(Newtonsoft.Json.MemberSerialization.OptIn)]
-    public sealed class EfficientFetchOptions
-    {
-        [Option("Minimum Amount (%)", "The minimum percentage of material required to\r\nsupply a chore, unless no other items are available (0-100)", null)]
-        [Limit(0.0, 100.0)]
-        [JsonProperty]
-        public int MinimumAmountPercent { get; set; }
+    //#region Mod: Efficient Supply
+    //[JsonObject(Newtonsoft.Json.MemberSerialization.OptIn)]
+    //public sealed class EfficientFetchOptions
+    //{
+    //    [Option("Minimum Amount (%)", "The minimum percentage of material required to\r\nsupply a chore, unless no other items are available (0-100)", null)]
+    //    [Limit(0.0, 100.0)]
+    //    [JsonProperty]
+    //    public int MinimumAmountPercent { get; set; }
 
-        public EfficientFetchOptions()
-        {
-            MinimumAmountPercent = 25;
-        }
+    //    public EfficientFetchOptions()
+    //    {
+    //        MinimumAmountPercent = 25;
+    //    }
 
-        public float GetMinimumRatio()
-        {
-            return ((float)MinimumAmountPercent * 0.01f).InRange(0f, 1f);
-        }
+    //    public float GetMinimumRatio()
+    //    {
+    //        return ((float)MinimumAmountPercent * 0.01f).InRange(0f, 1f);
+    //    }
 
-        public override string ToString()
-        {
-            return "EfficientFetchOptions[minimumAmount={0}]".F(MinimumAmountPercent);
-        }
-    }
+    //    public override string ToString()
+    //    {
+    //        return "EfficientFetchOptions[minimumAmount={0}]".F(MinimumAmountPercent);
+    //    }
+    //}
 
-    internal sealed class EfficientFetchManager : IDisposable
-    {
-        public static EfficientFetchManager Instance { get; private set; }
+    //internal sealed class EfficientFetchManager : IDisposable
+    //{
+    //    public static EfficientFetchManager Instance { get; private set; }
 
-        private readonly ChoreTypes choreTypes;
-        private readonly ConcurrentDictionary<Tag, FetchData> outstanding;
-        private readonly IList<FetchManager.Pickup> fmPickups;
-        private readonly float thresholdFraction;
+    //    private readonly ChoreTypes choreTypes;
+    //    private readonly ConcurrentDictionary<Tag, FetchData> outstanding;
+    //    private readonly IList<FetchManager.Pickup> fmPickups;
+    //    private readonly float thresholdFraction;
 
-        private EfficientFetchManager(float thresholdFraction)
-        {
-            if (thresholdFraction.IsNaNOrInfinity())
-            {
-                throw new ArgumentException(nameof(thresholdFraction));
-            }
-            choreTypes = Db.Get().ChoreTypes;
-            outstanding = new ConcurrentDictionary<Tag, FetchData>(4, 512);
-            IList<FetchManager.Pickup> list = null;
-            FetchManager fetchManager = Game.Instance.fetchManager;
-            try
-            {
-                FieldInfo fieldSafe = typeof(FetchManager).GetFieldSafe("pickups", false);
-                if (fieldSafe != null && fetchManager != null)
-                {
-                    list = fieldSafe.GetValue(fetchManager) as IList<FetchManager.Pickup>;
-                }
-            }
-            catch (FieldAccessException)
-            {
-            }
-            catch (TargetException)
-            {
-            }
-            if (list == null)
-            {
-                PUtil.LogWarning("Unable to find pickups field on FetchManager!");
-            }
-            fmPickups = list;
-            this.thresholdFraction = thresholdFraction;
-        }
+    //    private EfficientFetchManager(float thresholdFraction)
+    //    {
+    //        if (thresholdFraction.IsNaNOrInfinity())
+    //        {
+    //            throw new ArgumentException(nameof(thresholdFraction));
+    //        }
+    //        choreTypes = Db.Get().ChoreTypes;
+    //        outstanding = new ConcurrentDictionary<Tag, FetchData>(4, 512);
+    //        IList<FetchManager.Pickup> list = null;
+    //        FetchManager fetchManager = Game.Instance.fetchManager;
+    //        try
+    //        {
+    //            FieldInfo fieldSafe = typeof(FetchManager).GetFieldSafe("pickups", false);
+    //            if (fieldSafe != null && fetchManager != null)
+    //            {
+    //                list = fieldSafe.GetValue(fetchManager) as IList<FetchManager.Pickup>;
+    //            }
+    //        }
+    //        catch (FieldAccessException)
+    //        {
+    //        }
+    //        catch (TargetException)
+    //        {
+    //        }
+    //        if (list == null)
+    //        {
+    //            PUtil.LogWarning("Unable to find pickups field on FetchManager!");
+    //        }
+    //        fmPickups = list;
+    //        this.thresholdFraction = thresholdFraction;
+    //    }
 
-        public static void CreateInstance(float threshold)
-        {
-            DestroyInstance();
-            Instance = new EfficientFetchManager(threshold);
-        }
+    //    public static void CreateInstance(float threshold)
+    //    {
+    //        DestroyInstance();
+    //        Instance = new EfficientFetchManager(threshold);
+    //    }
 
-        public static void DestroyInstance()
-        {
-            EfficientFetchManager instance = Instance;
-            instance?.Dispose();
-            Instance = null;
-        }
+    //    public static void DestroyInstance()
+    //    {
+    //        EfficientFetchManager instance = Instance;
+    //        instance?.Dispose();
+    //        Instance = null;
+    //    }
 
-        public void Dispose()
-        {
-            outstanding.Clear();
-        }
+    //    public void Dispose()
+    //    {
+    //        outstanding.Clear();
+    //    }
 
-        private static void CondensePickups(List<FetchManager.Pickup> pickups)
-        {
-            int count = pickups.Count;
-            FetchManager.Pickup pickup = pickups[0];
-            int tagBitsHash = pickup.tagBitsHash;
-            int num = count;
-            int num2 = 0;
-            for (int i = 1; i < count; i++)
-            {
-                FetchManager.Pickup pickup2 = pickups[i];
-                if (pickup.masterPriority == pickup2.masterPriority && pickup2.tagBitsHash == tagBitsHash)
-                {
-                    num--;
-                }
-                else
-                {
-                    num2++;
-                    pickup = pickup2;
-                    tagBitsHash = pickup2.tagBitsHash;
-                    if (i > num2)
-                    {
-                        pickups[num2] = pickup2;
-                    }
-                }
-            }
-            pickups.RemoveRange(num, count - num);
-        }
+    //    private static void CondensePickups(List<FetchManager.Pickup> pickups)
+    //    {
+    //        int count = pickups.Count;
+    //        FetchManager.Pickup pickup = pickups[0];
+    //        int tagBitsHash = pickup.tagBitsHash;
+    //        int num = count;
+    //        int num2 = 0;
+    //        for (int i = 1; i < count; i++)
+    //        {
+    //            FetchManager.Pickup pickup2 = pickups[i];
+    //            if (pickup.masterPriority == pickup2.masterPriority && pickup2.tagBitsHash == tagBitsHash)
+    //            {
+    //                num--;
+    //            }
+    //            else
+    //            {
+    //                num2++;
+    //                pickup = pickup2;
+    //                tagBitsHash = pickup2.tagBitsHash;
+    //                if (i > num2)
+    //                {
+    //                    pickups[num2] = pickup2;
+    //                }
+    //            }
+    //        }
+    //        pickups.RemoveRange(num, count - num);
+    //    }
 
-        private static void GetFetchList(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
-        {
-            cellCosts.Clear();
-            List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
-            foreach (FetchManager.Fetchable fetchable in fetch.fetchables.GetDataList())
-            {
-                Pickupable pickupable = fetchable.pickupable;
-                if (pickupable.CouldBePickedUpByMinion(instanceID))
-                {
-                    int cachedCell = pickupable.cachedCell;
-                    if (!cellCosts.TryGetValue(cachedCell, out int navigationCost))
-                    {
-                        navigationCost = pickupable.GetNavigationCost(navigator, cachedCell);
-                        cellCosts.Add(cachedCell, navigationCost);
-                    }
-                    if (navigationCost >= 0)
-                    {
-                        finalPickups.Add(new FetchManager.Pickup
-                        {
-                            pickupable = pickupable,
-                            tagBitsHash = fetchable.tagBitsHash,
-                            PathCost = (ushort)Math.Min(navigationCost, 65535),
-                            masterPriority = fetchable.masterPriority,
-                            freshness = fetchable.freshness,
-                            foodQuality = fetchable.foodQuality
-                        });
-                    }
-                }
-            }
-        }
+    //    private static void GetFetchList(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
+    //    {
+    //        cellCosts.Clear();
+    //        List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
+    //        foreach (FetchManager.Fetchable fetchable in fetch.fetchables.GetDataList())
+    //        {
+    //            Pickupable pickupable = fetchable.pickupable;
+    //            if (pickupable.CouldBePickedUpByMinion(instanceID))
+    //            {
+    //                int cachedCell = pickupable.cachedCell;
+    //                if (!cellCosts.TryGetValue(cachedCell, out int navigationCost))
+    //                {
+    //                    navigationCost = pickupable.GetNavigationCost(navigator, cachedCell);
+    //                    cellCosts.Add(cachedCell, navigationCost);
+    //                }
+    //                if (navigationCost >= 0)
+    //                {
+    //                    finalPickups.Add(new FetchManager.Pickup
+    //                    {
+    //                        pickupable = pickupable,
+    //                        tagBitsHash = fetchable.tagBitsHash,
+    //                        PathCost = (ushort)Math.Min(navigationCost, 65535),
+    //                        masterPriority = fetchable.masterPriority,
+    //                        freshness = fetchable.freshness,
+    //                        foodQuality = fetchable.foodQuality
+    //                    });
+    //                }
+    //            }
+    //        }
+    //    }
 
-        internal bool FindFetchTarget(FetchChore chore, ChoreConsumerState state, out Pickupable result)
-        {
-            bool result2 = true;
-            if (chore.destination != null && !state.hasSolidTransferArm && fmPickups != null)
-            {
-                ChoreType choreType = chore.choreType;
-                string a = choreType?.Id ?? "";
-                if (a != choreTypes.StorageFetch.Id && a != choreTypes.CreatureFetch.Id && a != choreTypes.FoodFetch.Id)
-                {
-                    result = FindFetchTarget(chore);
-                    result2 = false;
-                }
-                else
-                {
-                    result = null;
-                }
-            }
-            else
-            {
-                result = null;
-            }
-            return result2;
-        }
+    //    internal bool FindFetchTarget(FetchChore chore, ChoreConsumerState state, out Pickupable result)
+    //    {
+    //        bool result2 = true;
+    //        if (chore.destination != null && !state.hasSolidTransferArm && fmPickups != null)
+    //        {
+    //            ChoreType choreType = chore.choreType;
+    //            string a = choreType?.Id ?? "";
+    //            if (a != choreTypes.StorageFetch.Id && a != choreTypes.CreatureFetch.Id && a != choreTypes.FoodFetch.Id)
+    //            {
+    //                result = FindFetchTarget(chore);
+    //                result2 = false;
+    //            }
+    //            else
+    //            {
+    //                result = null;
+    //            }
+    //        }
+    //        else
+    //        {
+    //            result = null;
+    //        }
+    //        return result2;
+    //    }
 
-        internal Pickupable FindFetchTarget(FetchChore chore)
-        {
-            Pickupable pickupable = null;
-            Storage destination = chore.destination;
-            float num = chore.originalAmount * thresholdFraction;
-            float num2 = 0f;
-            foreach (FetchManager.Pickup pickup in fmPickups)
-            {
-                Pickupable pickupable2 = pickup.pickupable;
-                if (FetchManager.IsFetchablePickup(pickupable2, chore, destination))
-                {
-                    float unreservedAmount = pickupable2.UnreservedAmount;
-                    if (pickupable == null)
-                    {
-                        pickupable = pickupable2;
-                        num2 = unreservedAmount;
-                    }
-                    if (unreservedAmount >= num)
-                    {
-                        pickupable = pickupable2;
-                        num2 = unreservedAmount;
-                        break;
-                    }
-                }
-            }
-            if (pickupable != null)
-            {
-                Tag key = pickupable.PrefabID();
-                if (outstanding.TryGetValue(key, out var fetchData) && !fetchData.NeedsScan)
-                {
-                    outstanding.TryRemove(key, out _);
-                }
-                else if (num2 < num && outstanding.TryAdd(key, new FetchData(num)))
-                {
-                    pickupable = null;
-                }
-            }
-            return pickupable;
-        }
+    //    internal Pickupable FindFetchTarget(FetchChore chore)
+    //    {
+    //        Pickupable pickupable = null;
+    //        Storage destination = chore.destination;
+    //        float num = chore.originalAmount * thresholdFraction;
+    //        float num2 = 0f;
+    //        foreach (FetchManager.Pickup pickup in fmPickups)
+    //        {
+    //            Pickupable pickupable2 = pickup.pickupable;
+    //            if (FetchManager.IsFetchablePickup(pickupable2, chore, destination))
+    //            {
+    //                float unreservedAmount = pickupable2.UnreservedAmount;
+    //                if (pickupable == null)
+    //                {
+    //                    pickupable = pickupable2;
+    //                    num2 = unreservedAmount;
+    //                }
+    //                if (unreservedAmount >= num)
+    //                {
+    //                    pickupable = pickupable2;
+    //                    num2 = unreservedAmount;
+    //                    break;
+    //                }
+    //            }
+    //        }
+    //        if (pickupable != null)
+    //        {
+    //            Tag key = pickupable.PrefabID();
+    //            if (outstanding.TryGetValue(key, out var fetchData) && !fetchData.NeedsScan)
+    //            {
+    //                outstanding.TryRemove(key, out _);
+    //            }
+    //            else if (num2 < num && outstanding.TryAdd(key, new FetchData(num)))
+    //            {
+    //                pickupable = null;
+    //            }
+    //        }
+    //        return pickupable;
+    //    }
 
-        internal void UpdatePickups(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
-        {
-            List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
-            if (finalPickups != null)
-            {
-                if (!outstanding.TryGetValue(fetch.prefabId, out var fetchData))
-                {
-                    fetchData = null;
-                }
-                finalPickups.Clear();
-                GetFetchList(fetch, navigator, instanceID, cellCosts);
-                if (finalPickups.Count > 1)
-                {
-                    finalPickups.Sort(fetchData ?? FetchData.Default);
-                    CondensePickups(finalPickups);
-                }
-                if (fetchData != null)
-                {
-                    fetchData.NeedsScan = false;
-                }
-            }
-        }
+    //    internal void UpdatePickups(FetchManager.FetchablesByPrefabId fetch, Navigator navigator, int instanceID, IDictionary<int, int> cellCosts)
+    //    {
+    //        List<FetchManager.Pickup> finalPickups = fetch.finalPickups;
+    //        if (finalPickups != null)
+    //        {
+    //            if (!outstanding.TryGetValue(fetch.prefabId, out var fetchData))
+    //            {
+    //                fetchData = null;
+    //            }
+    //            finalPickups.Clear();
+    //            GetFetchList(fetch, navigator, instanceID, cellCosts);
+    //            if (finalPickups.Count > 1)
+    //            {
+    //                finalPickups.Sort(fetchData ?? FetchData.Default);
+    //                CondensePickups(finalPickups);
+    //            }
+    //            if (fetchData != null)
+    //            {
+    //                fetchData.NeedsScan = false;
+    //            }
+    //        }
+    //    }
 
-        internal sealed class FetchData : IComparer<FetchManager.Pickup>
-        {
-            public static readonly FetchData Default = new FetchData(0f);
+    //    internal sealed class FetchData : IComparer<FetchManager.Pickup>
+    //    {
+    //        public static readonly FetchData Default = new FetchData(0f);
 
-            public bool NeedsScan { get; set; }
-            public float Threshold { get; }
+    //        public bool NeedsScan { get; set; }
+    //        public float Threshold { get; }
 
-            internal FetchData(float threshold)
-            {
-                Threshold = threshold;
-                NeedsScan = true;
-            }
+    //        internal FetchData(float threshold)
+    //        {
+    //            Threshold = threshold;
+    //            NeedsScan = true;
+    //        }
 
-            public int Compare(FetchManager.Pickup a, FetchManager.Pickup b)
-            {
-                int num = a.tagBitsHash.CompareTo(b.tagBitsHash);
-                if (num != 0)
-                {
-                    return num;
-                }
-                num = b.masterPriority.CompareTo(a.masterPriority);
-                if (num != 0)
-                {
-                    return num;
-                }
-                float unreservedAmount = a.pickupable.UnreservedAmount;
-                float unreservedAmount2 = b.pickupable.UnreservedAmount;
-                if (unreservedAmount >= Threshold && unreservedAmount2 < Threshold)
-                {
-                    return -1;
-                }
-                if (unreservedAmount < Threshold && unreservedAmount2 >= Threshold)
-                {
-                    return 1;
-                }
-                num = a.PathCost.CompareTo(b.PathCost);
-                if (num != 0)
-                {
-                    return num;
-                }
-                num = b.foodQuality.CompareTo(a.foodQuality);
-                if (num == 0)
-                {
-                    return b.freshness.CompareTo(a.freshness);
-                }
-                return num;
-            }
-        }
-    }
-    public sealed class EfficientFetchPatches
-    {
-        private const int ERROR_THRESHOLD = 10;
-        private static int errorCount;
+    //        public int Compare(FetchManager.Pickup a, FetchManager.Pickup b)
+    //        {
+    //            int num = a.tagBitsHash.CompareTo(b.tagBitsHash);
+    //            if (num != 0)
+    //            {
+    //                return num;
+    //            }
+    //            num = b.masterPriority.CompareTo(a.masterPriority);
+    //            if (num != 0)
+    //            {
+    //                return num;
+    //            }
+    //            float unreservedAmount = a.pickupable.UnreservedAmount;
+    //            float unreservedAmount2 = b.pickupable.UnreservedAmount;
+    //            if (unreservedAmount >= Threshold && unreservedAmount2 < Threshold)
+    //            {
+    //                return -1;
+    //            }
+    //            if (unreservedAmount < Threshold && unreservedAmount2 >= Threshold)
+    //            {
+    //                return 1;
+    //            }
+    //            num = a.PathCost.CompareTo(b.PathCost);
+    //            if (num != 0)
+    //            {
+    //                return num;
+    //            }
+    //            num = b.foodQuality.CompareTo(a.foodQuality);
+    //            if (num == 0)
+    //            {
+    //                return b.freshness.CompareTo(a.freshness);
+    //            }
+    //            return num;
+    //        }
+    //    }
+    //}
+    //public sealed class EfficientFetchPatches
+    //{
+    //    private const int ERROR_THRESHOLD = 10;
+    //    private static int errorCount;
 
-        public static void Init(Harmony harmony)
-        {
-            new PPatchManager(harmony).RegisterPatchClass(typeof(EfficientFetchPatches));
-        }
+    //    public static void Init(Harmony harmony)
+    //    {
+    //        new PPatchManager(harmony).RegisterPatchClass(typeof(EfficientFetchPatches));
+    //    }
 
-        [PLibMethod(5U)]
-        internal static void OnStartGame()
-        {
-            int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
-            float ratio = Mathf.Clamp01(minPercent * 0.01f);
+    //    [PLibMethod(5U)]
+    //    internal static void OnStartGame()
+    //    {
+    //        int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
+    //        float ratio = Mathf.Clamp01(minPercent * 0.01f);
 
-            PUtil.LogDebug($"EfficientFetch starting: Min Ratio={minPercent}%");
-            EfficientFetchManager.CreateInstance(ratio);
-        }
+    //        PUtil.LogDebug($"EfficientFetch starting: Min Ratio={minPercent}%");
+    //        EfficientFetchManager.CreateInstance(ratio);
+    //    }
 
-        [PLibMethod(6U)]
-        internal static void OnEndGame()
-        {
-            PUtil.LogDebug("Destroying EfficientFetch");
-            EfficientFetchManager.DestroyInstance();
-        }
+    //    [PLibMethod(6U)]
+    //    internal static void OnEndGame()
+    //    {
+    //        PUtil.LogDebug("Destroying EfficientFetch");
+    //        EfficientFetchManager.DestroyInstance();
+    //    }
 
 
-        [HarmonyPatch(typeof(FetchChore), "FindFetchTarget")]
-        public static class FetchChore_FindFetchTarget_Patch
-        {
-            internal static bool Prefix(FetchChore __instance, ChoreConsumerState consumer_state, ref Pickupable __result)
-            {
-                EfficientFetchManager instance = EfficientFetchManager.Instance;
-                bool result = true;
+    //    [HarmonyPatch(typeof(FetchChore), "FindFetchTarget")]
+    //    public static class FetchChore_FindFetchTarget_Patch
+    //    {
+    //        internal static bool Prefix(FetchChore __instance, ChoreConsumerState consumer_state, ref Pickupable __result)
+    //        {
+    //            EfficientFetchManager instance = EfficientFetchManager.Instance;
+    //            bool result = true;
 
-                int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
-                if (instance != null && minPercent > 0)
-                {
-                    result = instance.FindFetchTarget(__instance, consumer_state, out __result);
-                }
-                return result;
-            }
-        }
+    //            int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
+    //            if (instance != null && minPercent > 0)
+    //            {
+    //                result = instance.FindFetchTarget(__instance, consumer_state, out __result);
+    //            }
+    //            return result;
+    //        }
+    //    }
 
-        [HarmonyPatch(typeof(FetchManager.FetchablesByPrefabId), "UpdatePickups")]
-        public static class FetchablesByPrefabId_UpdatePickups_Patch
-        {
-            internal static bool Prefix(FetchManager.FetchablesByPrefabId __instance, Navigator worker_navigator, Dictionary<int, int> ___cellCosts, int worker)
-            {
-                EfficientFetchManager instance = EfficientFetchManager.Instance;
-                bool result = true;
+    //    [HarmonyPatch(typeof(FetchManager.FetchablesByPrefabId), "UpdatePickups")]
+    //    public static class FetchablesByPrefabId_UpdatePickups_Patch
+    //    {
+    //        internal static bool Prefix(FetchManager.FetchablesByPrefabId __instance, Navigator worker_navigator, Dictionary<int, int> ___cellCosts, int worker)
+    //        {
+    //            EfficientFetchManager instance = EfficientFetchManager.Instance;
+    //            bool result = true;
 
-                int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
-                if (instance != null && minPercent > 0)
-                {
-                    try
-                    {
-                        instance.UpdatePickups(__instance, worker_navigator, worker, ___cellCosts);
-                        result = false;
-                    }
-                    catch (Exception thrown)
-                    {
-                        if (++errorCount < ERROR_THRESHOLD)
-                        {
-                            PUtil.LogException(thrown);
-                        }
-                    }
-                }
-                return result;
-            }
-        }
-    }
-    #endregion
+    //            int minPercent = ModInit.Config?.EfficientFetch_MinimumAmount ?? 25;
+    //            if (instance != null && minPercent > 0)
+    //            {
+    //                try
+    //                {
+    //                    instance.UpdatePickups(__instance, worker_navigator, worker, ___cellCosts);
+    //                    result = false;
+    //                }
+    //                catch (Exception thrown)
+    //                {
+    //                    if (++errorCount < ERROR_THRESHOLD)
+    //                    {
+    //                        PUtil.LogException(thrown);
+    //                    }
+    //                }
+    //            }
+    //            return result;
+    //        }
+    //    }
+    //}
+    //#endregion
 
     #region Mod: Rest For The Weary
     public static class FinishTasksStrings
@@ -5082,11 +5082,234 @@ namespace QualityOfLifeONI
     }
     #endregion
 
-    #region Mod:
+    #region Mod: Auto Suit Delivery
+    public class SuitLockerAutoDelivery : KMonoBehaviour, ISim4000ms
+    {
+        [Serialize] public bool deliveryEnabled;
+        [Serialize] public float timeLastHaveSuit;
+        public SuitMarker suitMarker;
 
+        private static readonly FieldInfo onlyTraverseIfUnequipAvailable = AccessTools.Field(typeof(SuitMarker), "onlyTraverseIfUnequipAvailable");
+
+        public static bool IsApplicableLocker(SuitLocker locker, SuitMarker marker)
+        {
+            return locker.GetComponent<SuitLockerAutoDelivery>().deliveryEnabled
+                && locker.smi.sm.isConfigured.Get(locker.smi)
+                && (!(marker != null) || !(bool)onlyTraverseIfUnequipAvailable.GetValue(marker));
+        }
+
+        public void Sim4000ms(float dt)
+        {
+            SuitLocker component = GetComponent<SuitLocker>();
+            if (!IsApplicableLocker(component, suitMarker)) return;
+            if (component.smi.sm.isWaitingForSuit.Get(component.smi)) return;
+            if (component.GetStoredOutfit() != null) return;
+
+            int deliveryTime = ModInit.Config?.AutoSuitDelivery_DeliveryAfterTime ?? 600;
+            if (GameClock.Instance.GetTime() > timeLastHaveSuit + (float)deliveryTime)
+            {
+                component.ConfigRequestSuit();
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(SuitLockerConfig), "DoPostConfigureComplete")]
+    public static class SuitLockerConfig_Patch
+    {
+        public static void Postfix(GameObject go) => go.AddOrGet<SuitLockerAutoDelivery>();
+    }
+
+    [HarmonyPatch(typeof(LeadSuitLockerConfig), "DoPostConfigureComplete")]
+    public static class LeadSuitLockerConfig_Patch
+    {
+        public static void Postfix(GameObject go) => go.AddOrGet<SuitLockerAutoDelivery>();
+    }
+
+    [HarmonyPatch(typeof(JetSuitLockerConfig), "DoPostConfigureComplete")]
+    public static class JetSuitLockerConfig_Patch
+    {
+        public static void Postfix(GameObject go) => go.AddOrGet<SuitLockerAutoDelivery>();
+    }
+
+    [HarmonyPatch(typeof(OxygenMaskLockerConfig), "DoPostConfigureComplete")]
+    public static class OxygenMaskLockerConfig_Patch
+    {
+        public static void Postfix(GameObject go) => go.AddOrGet<SuitLockerAutoDelivery>();
+    }
+
+    [HarmonyPatch(typeof(SuitLocker))]
+    public static class SuitLocker_Patch
+    {
+        [HarmonyPatch("ConfigRequestSuit")]
+        [HarmonyPostfix]
+        public static void ConfigRequestSuit(SuitLocker __instance)
+        {
+            var comp = __instance.GetComponent<SuitLockerAutoDelivery>();
+            if (comp != null) comp.deliveryEnabled = true;
+        }
+
+        [HarmonyPatch("ConfigNoSuit")]
+        [HarmonyPostfix]
+        public static void ConfigNoSuit(SuitLocker __instance)
+        {
+            var comp = __instance.GetComponent<SuitLockerAutoDelivery>();
+            if (comp != null) comp.deliveryEnabled = false;
+        }
+
+        [HarmonyPatch("DropSuit")]
+        [HarmonyPostfix]
+        public static void DropSuit(SuitLocker __instance)
+        {
+            var comp = __instance.GetComponent<SuitLockerAutoDelivery>();
+            if (comp != null) comp.deliveryEnabled = false;
+        }
+
+        [HarmonyPatch("EquipTo")]
+        [HarmonyPrefix]
+        public static void EquipTo(SuitLocker __instance, Equipment equipment)
+        {
+            if (__instance.GetStoredOutfit() != null)
+            {
+                var comp = __instance.GetComponent<SuitLockerAutoDelivery>();
+                if (comp != null) comp.timeLastHaveSuit = GameClock.Instance.GetTime();
+            }
+        }
+
+        [HarmonyPatch("SetSuitMarker")]
+        [HarmonyPostfix]
+        public static void SetSuitMarker(SuitLocker __instance, SuitMarker suit_marker)
+        {
+            var comp = __instance.GetComponent<SuitLockerAutoDelivery>();
+            if (comp != null) comp.suitMarker = suit_marker;
+        }
+    }
+
+    public class SuitMarker_UnequipSuitReactable_Patch
+    {
+        private static readonly Type SuitMarker_UnequipSuitReactable_type = typeof(SuitMarker).GetNestedType("UnequipSuitReactable", BindingFlags.NonPublic);
+
+        public static void Patch(Harmony harmony)
+        {
+            MethodInfo methodInfo = AccessTools.Method(SuitMarker_UnequipSuitReactable_type, "Run", null, null);
+            if (methodInfo != null)
+            {
+                harmony.Patch(methodInfo, null, null, new HarmonyMethod(typeof(SuitMarker_UnequipSuitReactable_Patch).GetMethod(nameof(Run))), null);
+            }
+        }
+
+        public static IEnumerable<CodeInstruction> Run(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> list = new List<CodeInstruction>(instructions);
+            bool flag = false;
+            for (int i = 0; i < list.Count; i++)
+            {
+                int num = -1;
+                if (list[i].opcode == OpCodes.Brfalse_S && i + 3 < list.Count && list[i + 1].IsLdloc(null) && list[i + 2].opcode == OpCodes.Callvirt && list[i + 2].operand.ToString() == "Void Unassign()" && list[i + 3].opcode == OpCodes.Ldsfld && list[i + 3].operand.ToString() == "LocString NAME")
+                {
+                    num = i + 3;
+                }
+                else if (list[i].opcode == OpCodes.Brfalse_S && i + 5 < list.Count && list[i + 1].opcode == OpCodes.Nop && list[i + 2].IsLdloc(null) && list[i + 3].opcode == OpCodes.Callvirt && list[i + 3].operand.ToString() == "Void Unassign()" && list[i + 4].opcode == OpCodes.Nop && list[i + 5].opcode == OpCodes.Ldsfld && list[i + 5].operand.ToString() == "LocString NAME")
+                {
+                    num = i + 5;
+                }
+                if (num != -1)
+                {
+                    list.Insert(num, new CodeInstruction(OpCodes.Ldarg_0, null));
+                    list.Insert(num + 1, CodeInstruction.LoadField(SuitMarker_UnequipSuitReactable_type, "suitMarker", false));
+                    list.Insert(num + 2, new CodeInstruction(OpCodes.Call, typeof(SuitMarker_UnequipSuitReactable_Patch).GetMethod(nameof(Run_Hook))));
+                    list.Insert(num + 3, list[i].Clone());
+                    flag = true;
+                    break;
+                }
+            }
+            if (!flag)
+            {
+                Debug.LogWarning("QualityOfLifeONI: Failed to patch SuitMarker.UnequipSuitReactable.Run()");
+            }
+            return list;
+        }
+
+        public static bool Run_Hook(SuitMarker suitMarker) => AllowNotification(suitMarker);
+
+        public static bool AllowNotification(SuitMarker suitMarker)
+        {
+            ListPool<SuitLocker, SuitMarker>.PooledList pooledList = ListPool<SuitLocker, SuitMarker>.Allocate();
+            suitMarker.GetAttachedLockers(pooledList);
+            for (int i = 0; i < pooledList.Count; i++)
+            {
+                if (SuitLockerAutoDelivery.IsApplicableLocker(pooledList[i], suitMarker))
+                {
+                    pooledList.Recycle();
+                    return false;
+                }
+            }
+            pooledList.Recycle();
+            return true;
+        }
+    }
+
+    public class FastTrack_SuitMarkerUpdater_Patch
+    {
+        private static readonly Type FastTrack_SuitMarkerUpdater_type = Type.GetType("PeterHan.FastTrack.GamePatches.SuitMarkerUpdater, FastTrack");
+        private static SuitMarker FastTrack_SuitMarker;
+
+        public static void Patch(Harmony harmony)
+        {
+            MethodInfo methodInfo = AccessTools.Method(FastTrack_SuitMarkerUpdater_type, "DropSuit", null, null);
+            if (methodInfo != null)
+            {
+                harmony.Patch(methodInfo, null, null, new HarmonyMethod(typeof(FastTrack_SuitMarkerUpdater_Patch).GetMethod(nameof(FastTrackDropSuit))), null);
+                methodInfo = AccessTools.Method(FastTrack_SuitMarkerUpdater_type, "UnequipReact", null, null);
+                if (methodInfo != null)
+                {
+                    harmony.Patch(methodInfo, new HarmonyMethod(typeof(FastTrack_SuitMarkerUpdater_Patch).GetMethod(nameof(FastTrackDropSuit_Prefix))), null, null, null);
+                    harmony.Patch(methodInfo, null, new HarmonyMethod(typeof(FastTrack_SuitMarkerUpdater_Patch).GetMethod(nameof(FastTrackDropSuit_Postfix))), null, null);
+                    return;
+                }
+                Debug.LogWarning("QualityOfLifeONI: Failed to patch FastTrack SuitMarkerUpdater.UnequipReact()");
+            }
+        }
+
+        public static IEnumerable<CodeInstruction> FastTrackDropSuit(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> list = new List<CodeInstruction>(instructions);
+            bool flag = false;
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i].opcode == OpCodes.Ldloca_S && i + 2 < list.Count && list[i + 1].opcode == OpCodes.Callvirt && list[i + 1].operand.ToString() == "Boolean TryGetComponent[Notifier](Notifier ByRef)" && list[i + 2].opcode == OpCodes.Brfalse_S)
+                {
+                    list.Insert(i + 3, new CodeInstruction(OpCodes.Call, typeof(FastTrack_SuitMarkerUpdater_Patch).GetMethod(nameof(DropSuit_Hook))));
+                    list.Insert(i + 4, list[i + 2].Clone());
+                    flag = true;
+                    break;
+                }
+            }
+            if (!flag)
+            {
+                Debug.LogWarning("QualityOfLifeONI: Failed to patch FastTrack SuitMarkerUpdater.DropSuit()");
+            }
+            return list;
+        }
+
+        public static void FastTrackDropSuit_Prefix(SuitMarker checkpoint)
+        {
+            FastTrack_SuitMarker = checkpoint;
+        }
+
+        public static void FastTrackDropSuit_Postfix()
+        {
+            FastTrack_SuitMarker = null;
+        }
+
+        public static bool DropSuit_Hook()
+        {
+            bool avoidNotif = ModInit.Config?.AutoSuitDelivery_AvoidNotification ?? true;
+            return !avoidNotif || SuitMarker_UnequipSuitReactable_Patch.AllowNotification(FastTrack_SuitMarker);
+        }
+    }
     #endregion
 
-    #region Mod:
+    #region Mod: Pliers Fixed
 
     #endregion
 
